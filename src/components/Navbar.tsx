@@ -29,7 +29,7 @@ export default function Navbar() {
           </div>
           <div className="text-left hidden sm:block">
             <p className="text-sm font-semibold text-gray-900 leading-none">DOUA AOUANNAR</p>
-            <p className="text-xs text-gray-500 mt-1">Directeur RH</p>
+            <p className="text-xs text-gray-500 mt-1">Avocat_</p>
           </div>
           <ChevronDown className="w-4 h-4 text-gray-400" />
         </button>
