@@ -1,0 +1,56 @@
+{
+  "date": "2026-05-09T19:48:28.321555",
+  "summary": {
+    "rag": "5/5",
+    "llm": "4/5",
+    "pdf": "5/5",
+    "pass": "4/5"
+  },
+  "tests": [
+    {
+      "name": "عقد كراء سكني",
+      "rag": true,
+      "llm": true,
+      "pdf": true,
+      "kw_ok": true,
+      "file": "contrat_نموذج_عقد_كراء_سكني_في_ال_6312b1.pdf",
+      "elapsed": 13.62
+    },
+    {
+      "name": "فسخ عقد الكراء",
+      "rag": true,
+      "llm": true,
+      "pdf": true,
+      "kw_ok": true,
+      "file": "contrat_نموذج_فسخ_عقد_الكراء_في_ا_c40df1.pdf",
+      "elapsed": 7.81
+    },
+    {
+      "name": "إنذار أداء الكراء",
+      "rag": true,
+      "llm": true,
+      "pdf": true,
+      "kw_ok": true,
+      "file": "contrat_نموذج_إنذار_بأداء_السومة__0360a6.pdf",
+      "elapsed": 19.11
+    },
+    {
+      "name": "شركة SARL-AU",
+      "rag": true,
+      "llm": true,
+      "pdf": true,
+      "kw_ok": true,
+      "file": "contrat_نموذج_النظام_الاساسي__الش_2bc69a.pdf",
+      "elapsed": 43.82
+    },
+    {
+      "name": "عقد وكالة تجارية",
+      "rag": true,
+      "llm": false,
+      "pdf": true,
+      "kw_ok": false,
+      "file": "contrat_عقد_الوكالة_التجارية_في_ا_c375da.pdf",
+      "elapsed": 3.11
+    }
+  ]
+}

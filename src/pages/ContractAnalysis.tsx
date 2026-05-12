@@ -1,160 +1,186 @@
-import React, { useState } from 'react';
-import { Upload, FileSearch, ShieldAlert, CheckCircle, AlertTriangle, FileText, ArrowRight, Search, Info } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { useState } from "react";
+import contractService, { type ContractAnalysis } from "../services/contractService";
+import { ApiError } from "../services/apiClient";
 
 export default function ContractAnalysis() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [title,     setTitle]     = useState("");
+  const [content,   setContent]   = useState("");
+  const [type,      setType]      = useState("");
+  const [step,      setStep]      = useState<"form" | "analyzing" | "result">("form");
+  const [error,     setError]     = useState<string | null>(null);
+  const [analysis,  setAnalysis]  = useState<ContractAnalysis | null>(null);
 
-  const handleUpload = () => {
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisResult({
-        score: 72,
-        risks: [
-          { type: 'high', title: 'Clause de non-concurrence trop large', details: 'La clause ne précise pas de zone géographique limitée, ce qui pourrait la rendre nulle selon la jurisprudence marocaine.' },
-          { type: 'medium', title: 'Absence de clause de force majeure', details: 'Il est recommandé d\'ajouter une clause de force majeure pour protéger l\'entreprise en cas d\'événements imprévus.' }
-        ],
-        positives: [
-          { title: 'Conformité CNSS', details: 'Les mentions relatives aux cotisations sociales sont conformes.' },
-          { title: 'Juridiction compétente', details: 'Le tribunal de commerce de Casablanca est correctement désigné.' }
-        ]
+  const handleAnalyze = async () => {
+    if (!title.trim() || !content.trim()) {
+      setError("Veuillez renseigner le titre et le contenu du contrat");
+      return;
+    }
+    setError(null);
+    setStep("analyzing");
+
+    try {
+      // 1. Créer le contrat
+      const contract = await contractService.create({
+        title: title.trim(),
+        content: content.trim(),
+        contract_type: type.trim() || undefined,
       });
-    }, 2500);
+
+      // 2. Lancer l'analyse IA
+      const result = await contractService.analyze(contract.id);
+      setAnalysis(result);
+      setStep("result");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erreur lors de l'analyse");
+      setStep("form");
+    }
   };
 
-  return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-bold text-gray-900">Analyse de Contrat par IA</h1>
-        <p className="text-gray-500 mt-1">Téléchargez un contrat pour identifier les risques juridiques et les points d'amélioration.</p>
-      </header>
+  const reset = () => {
+    setTitle("");
+    setContent("");
+    setType("");
+    setAnalysis(null);
+    setError(null);
+    setStep("form");
+  };
 
-      {!analysisResult && !isAnalyzing && (
-        <div className="max-w-3xl mx-auto">
-          <div 
-            className="border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer group"
-            onClick={handleUpload}
+  // ─── Analyzing spinner ────────────────────────────────────────────────────
+  if (step === "analyzing") {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-600 font-medium">Analyse IA en cours...</p>
+        <p className="text-sm text-gray-400">Cela peut prendre 10 à 30 secondes</p>
+      </div>
+    );
+  }
+
+  // ─── Result ───────────────────────────────────────────────────────────────
+  if (step === "result" && analysis) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Résultat de l'analyse</h1>
+          <button
+            onClick={reset}
+            className="text-sm text-blue-600 hover:underline"
           >
-            <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-              <Upload className="w-10 h-10 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Glissez votre document ici</h2>
-            <p className="text-gray-500 mb-8">Supporte PDF, DOCX et images (JPG, PNG). Max 10MB.</p>
-            <button className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20">
-              Sélectionner un fichier
-            </button>
+            ← Nouvelle analyse
+          </button>
+        </div>
+
+        <div className="space-y-5">
+          {/* Résumé */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <h2 className="font-semibold text-blue-900 mb-2">📋 Résumé</h2>
+            <p className="text-blue-800 text-sm leading-relaxed">{analysis.summary}</p>
           </div>
+
+          {/* Risques */}
+          {analysis.risks?.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+              <h2 className="font-semibold text-red-900 mb-3">⚠️ Risques identifiés</h2>
+              <ul className="space-y-2">
+                {analysis.risks.map((risk, i) => (
+                  <li key={i} className="flex gap-2 text-red-800 text-sm">
+                    <span className="text-red-400 mt-0.5">•</span>
+                    <span>{risk}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Points de négociation */}
+          {analysis.negotiation_points?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+              <h2 className="font-semibold text-amber-900 mb-3">🤝 Points à négocier</h2>
+              <ul className="space-y-2">
+                {analysis.negotiation_points.map((point, i) => (
+                  <li key={i} className="flex gap-2 text-amber-800 text-sm">
+                    <span className="text-amber-400 mt-0.5">•</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Conformité */}
+          {analysis.compliance_notes && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+              <h2 className="font-semibold text-green-900 mb-2">✅ Conformité au droit marocain</h2>
+              <p className="text-green-800 text-sm leading-relaxed">{analysis.compliance_notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Form ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Analyse de contrat</h1>
+      <p className="text-gray-500 mb-6 text-sm">
+        Collez votre contrat ci-dessous pour une analyse juridique IA basée sur le droit marocain
+      </p>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {error}
         </div>
       )}
 
-      {isAnalyzing && (
-        <div className="max-w-2xl mx-auto py-20 text-center space-y-8">
-          <div className="relative w-24 h-24 mx-auto">
-            <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-blue-900 rounded-full border-t-transparent animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <FileSearch className="w-10 h-10 text-blue-900" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-gray-900">Analyse en cours...</h2>
-            <p className="text-gray-500">Notre IA examine les clauses, vérifie la conformité et identifie les risques potentiels.</p>
-          </div>
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="w-2 h-2 bg-blue-900 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }}></div>
-            ))}
-          </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Titre du contrat *</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Bail commercial, Contrat de travail..."
+          />
         </div>
-      )}
 
-      {analysisResult && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <section className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <ShieldAlert className="w-6 h-6 text-amber-500" />
-                  Risques identifiés
-                </h2>
-                <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">{analysisResult.risks.length} Alertes</span>
-              </div>
-              <div className="space-y-4">
-                {analysisResult.risks.map((risk: any, idx: number) => (
-                  <div key={idx} className={cn(
-                    "p-4 rounded-xl border flex gap-4",
-                    risk.type === 'high' ? "bg-red-50 border-red-100" : "bg-amber-50 border-amber-100"
-                  )}>
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                      risk.type === 'high' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
-                    )}>
-                      {risk.type === 'high' ? <AlertTriangle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{risk.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">{risk.details}</p>
-                      <button className="text-xs font-bold text-blue-600 mt-3 flex items-center gap-1 hover:underline">
-                        Comment corriger ?
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type de contrat</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="">Sélectionner (optionnel)</option>
+            <option value="bail">Bail / Location</option>
+            <option value="travail">Contrat de travail</option>
+            <option value="vente">Contrat de vente</option>
+            <option value="prestation">Prestation de services</option>
+            <option value="societe">Contrat de société</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
 
-            <section className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <CheckCircle className="w-6 h-6 text-emerald-500" />
-                Points positifs
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {analysisResult.positives.map((pos: any, idx: number) => (
-                  <div key={idx} className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                    <h3 className="font-bold text-gray-900 text-sm">{pos.title}</h3>
-                    <p className="text-xs text-gray-600 mt-1">{pos.details}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Contenu du contrat *</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={12}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y text-sm"
+            placeholder="Collez ici le texte complet de votre contrat..."
+          />
+        </div>
 
-          <div className="space-y-6">
-            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Score de conformité</h3>
-              <div className="relative w-32 h-32 mx-auto mb-6">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-100" />
-                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={364} strokeDashoffset={364 - (364 * analysisResult.score) / 100} className="text-blue-900 transition-all duration-1000 ease-out" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black text-gray-900">{analysisResult.score}%</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Votre contrat est globalement conforme mais nécessite quelques ajustements pour une protection optimale.
-              </p>
-              <button className="w-full mt-8 bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-all">
-                Générer un rapport PDF
-              </button>
-            </div>
-
-            <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl p-6 text-white">
-              <h3 className="font-bold text-lg mb-2">Besoin d'une révision ?</h3>
-              <p className="text-sm text-blue-100 leading-relaxed mb-6">
-                Notre équipe de juristes partenaires peut réviser votre contrat sous 24h.
-              </p>
-              <button className="w-full bg-white text-blue-900 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors">
-                Contacter un expert
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+        <button
+          onClick={handleAnalyze}
+          disabled={!title.trim() || !content.trim()}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-xl transition"
+        >
+          Analyser avec l'IA
+        </button>
+      </div>
     </div>
   );
 }

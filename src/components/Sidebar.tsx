@@ -15,18 +15,35 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+
 const navItems = [
-  { icon: LayoutDashboard, label: 'Tableau de bord', path: '/' },
+  // '/' redirige vers 'dashboard' dans ton App.tsx, donc c'est OK
+  { icon: LayoutDashboard, label: 'Tableau de bord', path: '/dashboard' }, 
   { icon: Gavel, label: 'Décisions juridiques', path: '/decisions' },
   { icon: Scale, label: 'Articles de loi', path: '/articles' },
   { icon: MessageSquare, label: 'Assistant IA', path: '/chat' },
-  { icon: FilePlus, label: 'Générateur de contrat', path: '/generator' },
-  { icon: Search, label: 'Analyse de contrat', path: '/analysis' },
+  // CORRECTION : Doit correspondre à path="contract-generator"
+  { icon: FilePlus, label: 'Générateur de contrat', path: '/contract-generator' }, 
+  // CORRECTION : Doit correspondre à path="contract-analysis"
+  { icon: Search, label: 'Analyse de contrat', path: '/contract-analysis' }, 
   { icon: FileText, label: 'Mes documents', path: '/documents' },
   { icon: Bell, label: 'Notifications', path: '/notifications' },
+  // Dans Sidebar.tsx
+  { icon: FileText, label: 'Mes Contrats', path: '/contracts' },
 ];
 
 export default function Sidebar() {
+
+const { logout } = useAuth();
+const navigate = useNavigate();
+
+const handleLogout = () => {
+  logout();
+  navigate("/login");
+};
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50">
       <div className="p-6 flex items-center gap-3">
@@ -71,7 +88,7 @@ export default function Sidebar() {
           <User className="w-5 h-5" />
           Mon Profil
         </NavLink>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 mt-1">
+        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 mt-1">
           <LogOut className="w-5 h-5" />
           Déconnexion
         </button>

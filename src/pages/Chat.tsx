@@ -1,176 +1,227 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Paperclip, Search, Info, Scale } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useRef, useEffect } from "react";
+import chatService, { type ChatMessage } from "../services/chatService";
+import { ApiError } from "../services/apiClient";
 
-interface Message {
-  id: string;
-  role: 'assistant' | 'user';
-  content: string;
-  timestamp: Date;
-  sources?: string[];
+// ─── Source chip (RAG sources) ───────────────────────────────────────────────
+
+function SourceChip({ source }: { source: { title?: string; url?: string } }) {
+  if (!source?.title) return null;
+  return source.url ? (
+    <a
+      href={source.url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full hover:bg-blue-100 transition"
+    >
+      📄 {source.title.slice(0, 40)}{source.title.length > 40 ? "…" : ""}
+    </a>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+      📄 {source.title.slice(0, 40)}
+    </span>
+  );
 }
 
-export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Bonjour Ahmed ! Je suis votre assistant juridique IA. Comment puis-je vous aider aujourd'hui ? Je peux vous aider à analyser un contrat, répondre à des questions sur le code du travail marocain ou rechercher des décisions de justice.",
-      timestamp: new Date(),
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+// ─── Message bubble ──────────────────────────────────────────────────────────
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+function MessageBubble({ msg }: { msg: ChatMessage }) {
+  const isUser = msg.role === "user";
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-1 flex-shrink-0">
+          AI
+        </div>
+      )}
+      <div className="max-w-[75%] flex flex-col gap-1">
+        <div
+          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+            isUser
+              ? "bg-blue-600 text-white rounded-br-sm"
+              : "bg-gray-100 text-gray-800 rounded-bl-sm"
+          }`}
+        >
+          {msg.content}
+        </div>
+        {/* ✅ Fix: afficher les sources RAG si disponibles */}
+        {!isUser && msg.sources && msg.sources.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-1">
+            {msg.sources.map((src: any, i: number) => (
+              <SourceChip key={i} source={src} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Chat Page ───────────────────────────────────────────────────────────────
+
+export default function Chat() {
+  const [messages,  setMessages]  = useState<ChatMessage[]>([]);
+  const [input,     setInput]     = useState("");
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    const content = input.trim();
+    if (!content || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
+    setInput("");
+    setError(null);
+
+    // Optimistic UI — message utilisateur immédiat
+    const tempId = Date.now();
+    const tempUserMsg: ChatMessage = {
+      id: tempId,
+      user_id: 0,
+      role: "user",
+      content,
+      session_id: sessionId || "",
+      created_at: new Date().toISOString(),
+      sources: [],
     };
+    setMessages((prev) => [...prev, tempUserMsg]);
+    setIsLoading(true);
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsTyping(true);
+    try {
+      // ✅ Fix: chatService.sendMessage kiyerja3 { message, sources, session_id, ai_msg_id }
+      const res = await chatService.sendMessage(content, sessionId);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "D'après l'article 39 du Code du Travail marocain, la faute grave peut justifier un licenciement immédiat sans indemnités de préavis ni de dommages-intérêts. Cependant, la procédure disciplinaire prévue par les articles 62 à 65 doit être scrupuleusement respectée (entretien préalable, notification dans les délais, etc.).",
-        timestamp: new Date(),
-        sources: ['Code du Travail - Article 39', 'Cour de Cassation - Décision 2023/156']
+      if (!sessionId) setSessionId(res.session_id);
+
+      const aiMsg: ChatMessage = {
+        id: res.ai_msg_id,
+        user_id: 0,
+        role: "assistant",
+        content: res.message,
+        session_id: res.session_id,
+        created_at: new Date().toISOString(),
+        // ✅ Fix: sources RAG من backend
+        sources: res.sources ?? [],
       };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Erreur de connexion au serveur"
+      );
+      // Retirer le message optimistic
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // ─── Nouvelle session ─────────────────────────────────────────────────────
+  const resetSession = () => {
+    setMessages([]);
+    setSessionId(undefined);
+    setError(null);
   };
 
   return (
-    <div className="h-[calc(100vh-160px)] flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <header className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-            <Bot className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold text-gray-900">Assistant Juridique IA</h2>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              <span className="text-xs text-emerald-600 font-medium">En ligne</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button className="p-2 text-gray-400 hover:bg-white hover:text-blue-600 rounded-lg transition-all">
-            <Search className="w-5 h-5" />
-          </button>
-          <button className="p-2 text-gray-400 hover:bg-white hover:text-blue-600 rounded-lg transition-all">
-            <Info className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30">
-        {messages.map((message) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "flex gap-4 max-w-3xl",
-              message.role === 'user' ? "ml-auto flex-row-reverse" : ""
-            )}
+    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-3xl mx-auto p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-gray-900">Assistant juridique IA</h1>
+        {messages.length > 0 && (
+          <button
+            onClick={resetSession}
+            className="text-xs text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 px-3 py-1.5 rounded-lg transition"
           >
-            <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-              message.role === 'assistant' ? "bg-blue-900 text-white" : "bg-indigo-600 text-white"
-            )}>
-              {message.role === 'assistant' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+            + Nouvelle conversation
+          </button>
+        )}
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-xl bg-white p-4">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
+            <div className="text-4xl mb-3">⚖️</div>
+            <p className="font-medium text-gray-600">Posez votre question juridique</p>
+            <p className="text-sm mt-1">
+              Droit du travail, contrats, procédures, droits civils...
+            </p>
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+              {[
+                "Quels sont mes droits en cas de licenciement abusif ?",
+                "Comment rédiger un bail conforme au droit marocain ?",
+                "Quelle est la procédure pour créer une SARL au Maroc ?",
+                "Quels sont les délais de prescription en droit civil marocain ?",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => setInput(q)}
+                  className="text-left text-xs p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition text-gray-600"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
-            <div className="space-y-2">
-              <div className={cn(
-                "p-4 rounded-2xl text-sm leading-relaxed shadow-sm",
-                message.role === 'assistant' 
-                  ? "bg-white text-gray-800 border border-gray-100 rounded-tl-none" 
-                  : "bg-indigo-600 text-white rounded-tr-none"
-              )}>
-                {message.content}
-              </div>
-              {message.sources && (
-                <div className="flex flex-wrap gap-2">
-                  {message.sources.map((source, idx) => (
-                    <span key={idx} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
-                      <Scale className="w-3 h-3" />
-                      {source}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
+          </div>
+        )}
+
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} />
         ))}
-        {isTyping && (
-          <div className="flex gap-4">
-            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center text-white">
-              <Bot className="w-5 h-5" />
+
+        {isLoading && (
+          <div className="flex justify-start mb-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold mr-2 mt-1 flex-shrink-0">
+              AI
             </div>
-            <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm">
+            <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm">
               <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+
+        <div ref={bottomRef} />
       </div>
 
-      <footer className="p-4 bg-white border-t border-gray-100">
-        <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Posez votre question juridique ici..."
-            className="w-full pl-12 pr-24 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-          />
-          <button 
-            type="button"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <button 
-              type="submit"
-              disabled={!input.trim()}
-              className="bg-blue-900 text-white p-2.5 rounded-xl hover:bg-blue-800 disabled:opacity-50 disabled:hover:bg-blue-900 transition-all shadow-lg shadow-blue-900/20"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
-        </form>
-        <p className="text-center text-[10px] text-gray-400 mt-3 font-medium uppercase tracking-widest">
-          Propulsé par LegalAI Morocco • L'IA peut faire des erreurs, vérifiez les sources.
-        </p>
-      </footer>
+      {error && (
+        <div className="mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">×</button>
+        </div>
+      )}
+
+      <div className="mt-3 flex gap-2">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={2}
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm transition"
+          placeholder="Posez votre question juridique... (Entrée pour envoyer)"
+          disabled={isLoading}
+        />
+        <button
+          onClick={sendMessage}
+          disabled={isLoading || !input.trim()}
+          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl font-semibold transition self-end"
+        >
+          Envoyer
+        </button>
+      </div>
     </div>
   );
 }

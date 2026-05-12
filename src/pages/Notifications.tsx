@@ -1,73 +1,122 @@
-import React from 'react';
-import { Bell, Info, AlertTriangle, CheckCircle2, Clock, MoreHorizontal, Settings } from 'lucide-react';
-import { mockNotifications } from '../mockData';
-import { cn } from '../lib/utils';
+import { useState } from "react";
+import { useApi, useMutation } from "../hooks/useApi";
+import { notificationService, type Notification } from "../services/index";
+
+const TYPE_STYLE: Record<string, string> = {
+  info:    "bg-blue-50 border-blue-200 text-blue-800",
+  warning: "bg-amber-50 border-amber-200 text-amber-800",
+  success: "bg-green-50 border-green-200 text-green-800",
+  error:   "bg-red-50 border-red-200 text-red-800",
+};
+
+const TYPE_ICON: Record<string, string> = {
+  info: "ℹ️", warning: "⚠️", success: "✅", error: "❌",
+};
 
 export default function Notifications() {
+  const [showUnread, setShowUnread] = useState(false);
+
+  const { data, isLoading, error, refetch } = useApi(
+    () => notificationService.list(1, showUnread),
+    [showUnread]
+  );
+
+  const { mutate: markRead }    = useMutation(notificationService.markRead,    { onSuccess: refetch });
+  const { mutate: markAllRead } = useMutation(notificationService.markAllRead, { onSuccess: refetch });
+
+  const notifications: Notification[] = data?.items ?? [];
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <header className="flex items-center justify-between">
+    <div className="p-6 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-500 mt-1">Restez informé des dernières mises à jour juridiques et de vos activités.</p>
+          {unreadCount > 0 && (
+            <p className="text-sm text-gray-500 mt-0.5">
+              {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          <button className="p-2 text-gray-400 hover:bg-white hover:text-blue-600 rounded-lg transition-all border border-transparent hover:border-gray-100">
-            <Settings className="w-5 h-5" />
+          <button
+            onClick={() => setShowUnread((v) => !v)}
+            className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+              showUnread
+                ? "bg-blue-600 text-white border-blue-600"
+                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            Non lues seulement
           </button>
-          <button className="text-sm font-bold text-blue-600 hover:underline px-2">
-            Tout marquer comme lu
-          </button>
-        </div>
-      </header>
-
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="divide-y divide-gray-50">
-          {mockNotifications.map((notif) => (
-            <div key={notif.id} className={cn(
-              "p-6 flex gap-6 transition-colors group relative",
-              !notif.read ? "bg-blue-50/30" : "hover:bg-gray-50/50"
-            )}>
-              {!notif.read && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-900"></div>
-              )}
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                notif.type === 'warning' ? "bg-amber-50 text-amber-600" : 
-                notif.type === 'error' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
-              )}>
-                {notif.type === 'warning' ? <AlertTriangle className="w-6 h-6" /> : 
-                 notif.type === 'error' ? <AlertTriangle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
-              </div>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <h3 className={cn(
-                    "text-sm font-bold",
-                    !notif.read ? "text-gray-900" : "text-gray-700"
-                  )}>{notif.title}</h3>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Il y a 2h
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 leading-relaxed pr-8">{notif.message}</p>
-                <div className="flex gap-4 pt-3">
-                  <button className="text-xs font-bold text-blue-600 hover:underline">Voir les détails</button>
-                  {!notif.read && <button className="text-xs font-bold text-gray-400 hover:text-gray-600">Marquer comme lu</button>}
-                </div>
-              </div>
-              <button className="p-2 text-gray-300 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
-            </div>
-          ))}
+          {unreadCount > 0 && (
+            <button
+              onClick={() => markAllRead()}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+            >
+              Tout marquer lu
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="text-center py-8">
-        <button className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">
-          Charger les notifications plus anciennes
-        </button>
+      {isLoading && (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {!isLoading && notifications.length === 0 && (
+        <div className="text-center py-16 text-gray-400">
+          <div className="text-4xl mb-3">🔔</div>
+          <p>Aucune notification{showUnread ? " non lue" : ""}</p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {notifications.map((notif) => (
+          <div
+            key={notif.id}
+            className={`border rounded-xl p-4 transition ${
+              notif.is_read
+                ? "bg-white border-gray-200"
+                : TYPE_STYLE[notif.notif_type] ?? TYPE_STYLE.info
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <span className="text-lg mt-0.5">{TYPE_ICON[notif.notif_type] ?? "ℹ️"}</span>
+                <div>
+                  <p className="font-medium text-sm">{notif.title}</p>
+                  {notif.message && (
+                    <p className="text-sm opacity-80 mt-0.5">{notif.message}</p>
+                  )}
+                  <p className="text-xs opacity-60 mt-1">
+                    {new Date(notif.created_at).toLocaleDateString("fr-MA", {
+                      day: "numeric", month: "long", year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+              {!notif.is_read && (
+                <button
+                  onClick={() => markRead(notif.id)}
+                  className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                >
+                  Marquer lu
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

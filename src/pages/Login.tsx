@@ -1,87 +1,147 @@
-import React, { useState } from 'react';
-import { Scale, Mail, Lock, Eye, EyeOff, ArrowRight, Github, Chrome } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { ApiError } from "../services/apiClient";
+import api from "../services/apiClient";
 
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
+  const { login }  = useAuth();
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  const successMsg = (location.state as any)?.message;
+
+  const [email,       setEmail]       = useState("");
+  const [password,    setPassword]    = useState("");
+  const [error,       setError]       = useState<string | null>(null);
+  const [isLoading,   setIsLoading]   = useState(false);
+  // ✅ Fix: si backend يرجع 403 (email pas confirmé) — نبينو bouton resend
+  const [needConfirm, setNeedConfirm] = useState(false);
+  const [resendSent,  setResendSent]  = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setNeedConfirm(false);
+    setIsLoading(true);
+
+    try {
+      await login(email.trim().toLowerCase(), password);
+      navigate("/dashboard");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // ✅ Fix: backend كيرجع 403 إلا email ما confirmahch
+        if (err.status === 403) {
+          setNeedConfirm(true);
+          setError(err.message);
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Une erreur est survenue.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await api.post("/auth/resend-confirmation", {
+        email: email.trim().toLowerCase(),
+      });
+      setResendSent(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erreur lors du renvoi.");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-blue-900 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-blue-900/20">
-            <Scale className="text-white w-10 h-10" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Connexion</h1>
+        <p className="text-gray-500 mb-6 text-sm">
+          Accédez à votre espace juridique LegalAI Maroc
+        </p>
+
+        {/* Message succès venant de register/reset */}
+        {successMsg && (
+          <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+            {successMsg}
           </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">LegalAI Morocco</h1>
-          <p className="text-gray-500">Connectez-vous pour accéder à votre assistant juridique intelligent.</p>
-        </div>
+        )}
 
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 space-y-6">
-          <form className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Email professionnel</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="email" 
-                  placeholder="nom@entreprise.ma"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-              </div>
-            </div>
+        {/* Erreur générale */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-sm font-bold text-gray-700">Mot de passe</label>
-                <button type="button" className="text-xs font-bold text-blue-600 hover:underline">Oublié ?</button>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
+        {/* ✅ Fix: Email pas confirmé — bouton resend */}
+        {needConfirm && (
+          <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200">
+            <p className="text-amber-800 text-sm font-medium mb-2">
+              📧 Email non confirmé
+            </p>
+            {resendSent ? (
+              <p className="text-green-700 text-sm">✅ Email de confirmation renvoyé !</p>
+            ) : (
+              <button
+                onClick={handleResend}
+                className="text-sm text-amber-700 underline hover:text-amber-900"
+              >
+                Renvoyer l'email de confirmation
+              </button>
+            )}
+          </div>
+        )}
 
-            <button className="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 group">
-              Se connecter
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-widest font-bold text-gray-400 bg-white px-4">
-              Ou continuer avec
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="vous@exemple.com"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-semibold text-sm text-gray-700">
-              <Chrome className="w-5 h-5" />
-              Google
-            </button>
-            <button className="flex items-center justify-center gap-2 py-3 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-semibold text-sm text-gray-700">
-              <Github className="w-5 h-5" />
-              GitHub
-            </button>
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Mot de passe
+              </label>
+              <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">
+                Mot de passe oublié ?
+              </Link>
+            </div>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="••••••••"
+            />
           </div>
-        </div>
 
-        <p className="text-center text-sm text-gray-500">
-          Pas encore de compte ?{' '}
-          <Link to="/register" className="font-bold text-blue-600 hover:underline">Inscrivez-vous gratuitement</Link>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition"
+          >
+            {isLoading ? "Connexion en cours..." : "Se connecter"}
+          </button>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-gray-500">
+          Pas encore de compte ?{" "}
+          <Link to="/register" className="text-blue-600 hover:underline font-medium">
+            Créer un compte
+          </Link>
         </p>
       </div>
     </div>

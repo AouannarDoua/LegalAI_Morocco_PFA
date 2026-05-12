@@ -1,107 +1,182 @@
-import React from 'react';
-import { FileText, Download, Trash2, Search, Filter, MoreVertical, Clock, CheckCircle2 } from 'lucide-react';
-import { mockContracts } from '../mockData';
-import { cn } from '../lib/utils';
+import { useState } from "react";
+import { useApi, useMutation } from "../hooks/useApi";
+import { documentService, type Document } from "../services/index";
 
 export default function Documents() {
+  const [page, setPage]         = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle]       = useState("");
+  const [docType, setDocType]   = useState("");
+  const [error, setError]       = useState<string | null>(null);
+
+  const { data, isLoading, refetch } = useApi(
+    () => documentService.list(page),
+    [page]
+  );
+
+  const { mutate: createDoc, isLoading: creating } = useMutation(
+    documentService.create,
+    {
+      onSuccess: () => {
+        setShowForm(false);
+        setTitle("");
+        setDocType("");
+        refetch();
+      },
+      onError: (e) => setError(e),
+    }
+  );
+
+  const { mutate: deleteDoc } = useMutation(documentService.delete, {
+    onSuccess: refetch,
+  });
+
+  const handleCreate = () => {
+    setError(null);
+    if (!title.trim()) {
+      setError("Le titre est requis");
+      return;
+    }
+    createDoc({ title: title.trim(), doc_type: docType || undefined });
+  };
+
+  const docs: Document[] = data?.items ?? [];
+
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mes Documents</h1>
-          <p className="text-gray-500 mt-1">Gérez vos contrats, analyses et rapports générés sur la plateforme.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          {data && (
+            <p className="text-sm text-gray-500 mt-0.5">
+              {data.total} document{data.total !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
-        <button className="bg-blue-900 text-white px-4 py-2 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
-          <FileText className="w-4 h-4" />
-          Nouveau document
+        <button
+          onClick={() => setShowForm((v) => !v)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+        >
+          {showForm ? "Annuler" : "+ Nouveau document"}
         </button>
-      </header>
-
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between bg-gray-50/30">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Rechercher un document..."
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-            />
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all">
-              <Filter className="w-4 h-4" />
-              Filtres
-            </button>
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all">
-              Trier par date
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b border-gray-50">
-                <th className="p-4 font-bold text-gray-400 text-[10px] uppercase tracking-widest">Nom du document</th>
-                <th className="p-4 font-bold text-gray-400 text-[10px] uppercase tracking-widest">Type</th>
-                <th className="p-4 font-bold text-gray-400 text-[10px] uppercase tracking-widest">Date de création</th>
-                <th className="p-4 font-bold text-gray-400 text-[10px] uppercase tracking-widest">Statut</th>
-                <th className="p-4 font-bold text-gray-400 text-[10px] uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {mockContracts.map((doc) => (
-                <tr key={doc.id} className="group hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="text-sm font-bold text-gray-900">{doc.title}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-gray-600 font-medium">{doc.type}</span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      {doc.createdAt}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        doc.status === 'final' ? "bg-emerald-500" : "bg-amber-500"
-                      )}></div>
-                      <span className={cn(
-                        "text-xs font-bold uppercase tracking-wider",
-                        doc.status === 'final' ? "text-emerald-600" : "text-amber-600"
-                      )}>
-                        {doc.status === 'final' ? 'Finalisé' : 'Brouillon'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
+
+      {/* Form */}
+      {showForm && (
+        <div className="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+          <h2 className="font-semibold text-gray-800 text-sm">Nouveau document</h2>
+          {error && (
+            <p className="text-red-600 text-xs">{error}</p>
+          )}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Titre du document *"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <select
+            value={docType}
+            onChange={(e) => setDocType(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="">Type de document (optionnel)</option>
+            <option value="identite">Pièce d'identité</option>
+            <option value="contrat">Contrat</option>
+            <option value="jugement">Jugement</option>
+            <option value="attestation">Attestation</option>
+            <option value="autre">Autre</option>
+          </select>
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold rounded-lg transition"
+          >
+            {creating ? "Création..." : "Créer"}
+          </button>
+        </div>
+      )}
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!isLoading && docs.length === 0 && (
+        <div className="text-center py-16 text-gray-400">
+          <div className="text-4xl mb-3">📁</div>
+          <p className="font-medium text-gray-600">Aucun document pour le moment</p>
+          <p className="text-sm mt-1">Cliquez sur "+ Nouveau document" pour commencer</p>
+        </div>
+      )}
+
+      {/* List */}
+      <div className="space-y-3">
+        {docs.map((doc) => (
+          <div
+            key={doc.id}
+            className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:border-gray-300 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-lg">
+                📄
+              </div>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">{doc.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {doc.doc_type && (
+                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full mr-2">
+                      {doc.doc_type}
+                    </span>
+                  )}
+                  {new Date(doc.created_at).toLocaleDateString("fr-MA", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (confirm("Supprimer ce document ?")) deleteDoc(doc.id);
+              }}
+              className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition"
+            >
+              Supprimer
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {data && data.pages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!data.has_prev}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            ← Précédent
+          </button>
+          <span className="px-4 py-2 text-sm text-gray-500">
+            Page {data.page} / {data.pages}
+          </span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!data.has_next}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            Suivant →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

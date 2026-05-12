@@ -1,217 +1,313 @@
-import React, { useState } from 'react';
-import { FilePlus, Download, Eye, CheckCircle2, AlertCircle, ChevronRight, FileText, Settings, User, Briefcase, Mail } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { useState, useEffect } from "react";
+import contractService from "../services/contractService";
+import apiClient, { ApiError } from "../services/apiClient";
+
+const API_BASE_URL = "http://localhost:5000";
+
+interface ContractTemplate {
+  title:    string;
+  fields:   string[];
+  category?: string;
+  url?:      string;
+  download?: string;
+}
 
 export default function ContractGenerator() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    type: 'CDI',
-    employeeName: '',
-    position: '',
-    salary: '',
-    startDate: '',
-    probationPeriod: '3 mois',
-  });
+  const [allTemplates,      setAllTemplates]      = useState<ContractTemplate[]>([]);
+  const [searchTerm,        setSearchTerm]        = useState("");
+  const [selectedTemplate,  setSelectedTemplate]  = useState<ContractTemplate | null>(null);
+  const [details,           setDetails]           = useState<Record<string, string>>({});
+  const [step,              setStep]              = useState<"search" | "form" | "generating" | "result">("search");
+  const [error,             setError]             = useState<string | null>(null);
+  const [pdfUrl,            setPdfUrl]            = useState<string | null>(null);
+  const [isLoading,         setIsLoading]         = useState(true);
 
-  const handleNext = () => setStep(prev => prev + 1);
-  const handleBack = () => setStep(prev => prev - 1);
+  // ✅ Fix: GET /api/contracts/templates — backend kiyerja3 { data: [...] } via success_response
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <header className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Générateur de Contrat Intelligent</h1>
-        <p className="text-gray-500">Créez des contrats conformes au droit marocain en quelques minutes.</p>
-      </header>
+    apiClient
+      .get<{ data: ContractTemplate[] }>("/contracts/templates")
+      .then((res: any) => {
+        if (!isMounted) return;
+        // ✅ Fix: Flask success_response kiyerja3 { success, data, message }
+        const raw = res?.data ?? res;
+        const templates = Array.isArray(raw) ? raw : (raw?.data ?? []);
+        setAllTemplates(
+          templates.filter(
+            (t: any) => t && typeof t.title === "string"
+          )
+        );
+        setIsLoading(false);
+      })
+      .catch((err: any) => {
+        if (!isMounted) return;
+        console.error("Erreur chargement templates:", err);
+        setError("Impossible de charger les modèles de contrats.");
+        setIsLoading(false);
+      });
 
-      <div className="flex items-center justify-center gap-4 mb-8">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all",
-              step >= s ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20" : "bg-gray-200 text-gray-500"
-            )}>
-              {s}
-            </div>
-            {s < 3 && <div className={cn("w-12 h-0.5 rounded-full", step > s ? "bg-blue-900" : "bg-gray-200")} />}
-          </div>
-        ))}
+    return () => { isMounted = false; };
+  }, []);
+
+  // Filtrage — protégé contre undefined
+  const filtered = allTemplates.filter(
+    (t) =>
+      t?.title &&
+      t.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleGenerate = async () => {
+    if (!selectedTemplate) return;
+    setError(null);
+    setStep("generating");
+
+    try {
+      // ✅ Fix: contractService.generate kiyerja3 l'objet contract avec file_name
+      const result = await contractService.generate({
+        contract_type: selectedTemplate.title,
+        details,
+      });
+
+      const fileName = (result as any)?.file_name;
+      if (!fileName) throw new Error("Nom de fichier manquant dans la réponse");
+
+      setPdfUrl(`${API_BASE_URL}/api/contracts/download/${fileName}`);
+      setStep("result");
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Erreur lors de la génération du PDF"
+      );
+      setStep("form");
+    }
+  };
+
+  const reset = () => {
+    setSearchTerm("");
+    setSelectedTemplate(null);
+    setDetails({});
+    setPdfUrl(null);
+    setStep("search");
+    setError(null);
+  };
+
+  // ─── Loading ──────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-96 gap-4">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-gray-500 animate-pulse">Chargement des modèles LegalAI...</p>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-          {step === 1 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-900">Informations de base</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Type de contrat</label>
-                  <select 
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
-                  >
-                    <option value="CDI">CDI (Durée Indéterminée)</option>
-                    <option value="CDD">CDD (Durée Déterminée)</option>
-                    <option value="ANAPEC">Contrat ANAPEC</option>
-                    <option value="STAGE">Convention de Stage</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Nom complet du salarié</label>
-                  <input 
-                    type="text" 
-                    placeholder="DOUA AOUANNAR"
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.employeeName}
-                    onChange={(e) => setFormData({...formData, employeeName: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Poste occupé</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Développeur Senior"
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.position}
-                    onChange={(e) => setFormData({...formData, position: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Date de début</label>
-                  <input 
-                    type="date" 
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end pt-4">
-                <button 
-                  onClick={handleNext}
-                  className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
-                >
-                  Suivant
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
+  // ─── Generating ───────────────────────────────────────────────────────────
+  if (step === "generating") {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-6">
+        <div className="relative w-20 h-20">
+          <div className="w-20 h-20 border-4 border-blue-100 rounded-full" />
+          <div className="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0" />
+        </div>
+        <p className="text-xl font-bold text-gray-800">Intelligence Artificielle en action...</p>
+        <p className="text-sm text-gray-400">Génération du contrat en cours via RAG</p>
+      </div>
+    );
+  }
 
-          {step === 2 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-900">Rémunération et Conditions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Salaire Brut (MAD)</label>
-                  <input 
-                    type="number" 
-                    placeholder="Ex: 15000"
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.salary}
-                    onChange={(e) => setFormData({...formData, salary: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700">Période d'essai</label>
-                  <select 
-                    className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                    value={formData.probationPeriod}
-                    onChange={(e) => setFormData({...formData, probationPeriod: e.target.value})}
-                  >
-                    <option value="15 jours">15 jours</option>
-                    <option value="1 mois">1 mois</option>
-                    <option value="3 mois">3 mois</option>
-                    <option value="6 mois">6 mois</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-between pt-4">
-                <button 
-                  onClick={handleBack}
-                  className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
-                >
-                  Retour
-                </button>
-                <button 
-                  onClick={handleNext}
-                  className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2"
-                >
-                  Générer l'aperçu
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Aperçu du contrat</h2>
-                <div className="flex gap-2">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                    <Download className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 font-serif text-sm leading-relaxed text-gray-800 h-96 overflow-y-auto space-y-4">
-                <h3 className="text-center font-bold text-lg uppercase underline">Contrat de Travail à Durée Indéterminée</h3>
-                <p>ENTRE LES SOUSSIGNÉS :</p>
-                <p>La société <strong>LegalAI Solutions SARL</strong>, sise à Casablanca, représentée par M. DOUA AOUANNAR, ci-après désignée "L'Employeur".</p>
-                <p>ET :</p>
-                <p>M. <strong>{formData.employeeName || "[Nom du salarié]"}</strong>, demeurant à [Adresse], ci-après désigné "Le Salarié".</p>
-                <p>IL A ÉTÉ CONVENU CE QUI SUIT :</p>
-                <p><strong>Article 1 : Engagement</strong><br />L'Employeur engage le Salarié en qualité de <strong>{formData.position || "[Poste]"}</strong> à compter du <strong>{formData.startDate || "[Date]"}</strong>.</p>
-                <p><strong>Article 2 : Rémunération</strong><br />Le Salarié percevra une rémunération brute mensuelle de <strong>{formData.salary || "[Salaire]"} MAD</strong>.</p>
-                <p><strong>Article 3 : Période d'essai</strong><br />Le présent contrat est conclu sous réserve d'une période d'essai de <strong>{formData.probationPeriod}</strong>.</p>
-              </div>
-              <div className="flex justify-between pt-4">
-                <button 
-                  onClick={handleBack}
-                  className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
-                >
-                  Modifier
-                </button>
-                <button 
-                  className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-2"
-                >
-                  Finaliser et Télécharger
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
+  // ─── Result ───────────────────────────────────────────────────────────────
+  if (step === "result") {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-blue-900">{selectedTemplate?.title}</h1>
+            <p className="text-sm text-gray-500">Document généré avec succès</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep("form")}
+              className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition font-medium"
+            >
+              Modifier
+            </button>
+            <button
+              onClick={reset}
+              className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg"
+            >
+              Nouveau contrat
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="font-bold text-gray-900 mb-4">Conseils Juridiques</h3>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  La période d'essai pour un cadre en CDI au Maroc est de 3 mois renouvelable une fois.
-                </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* PDF Viewer */}
+          <div className="lg:col-span-2 border-2 border-gray-100 rounded-3xl overflow-hidden h-[750px] bg-white shadow-2xl">
+            {pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="100%"
+                title="Contrat PDF"
+                className="border-none"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                Préparation de l'aperçu...
               </div>
-              <div className="flex gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  N'oubliez pas d'inclure une clause de confidentialité si le poste est sensible.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
-          <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-            <h3 className="font-bold text-blue-900 mb-2">Besoin d'une clause spécifique ?</h3>
-            <p className="text-xs text-blue-700 leading-relaxed mb-4">
-              Demandez à notre IA de rédiger une clause sur mesure pour votre contrat.
-            </p>
-            <button className="text-sm font-bold text-blue-900 hover:underline flex items-center gap-1">
-              Ouvrir l'assistant
-              <ChevronRight className="w-4 h-4" />
+          {/* Actions */}
+          <div className="space-y-4">
+            <div className="bg-green-50 p-6 rounded-3xl border border-green-100 shadow-sm">
+              <div className="text-3xl mb-2">📄</div>
+              <h3 className="font-bold text-green-900 mb-2">Document prêt !</h3>
+              <p className="text-sm text-green-700 mb-6">
+                Le contrat est conforme aux réglementations en vigueur.
+              </p>
+              <a
+                href={pdfUrl || "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full text-center py-4 bg-green-600 text-white rounded-2xl font-bold shadow-lg hover:bg-green-700 transition hover:-translate-y-1"
+              >
+                Télécharger le PDF
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Main form ────────────────────────────────────────────────────────────
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <div className="mb-10">
+        <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">
+          LegalAI Generator
+        </h1>
+        <p className="text-gray-500 text-lg">
+          Créez vos documents juridiques instantanément.
+        </p>
+        {/* ✅ Indicateur nombre de modèles */}
+        <p className="text-xs text-gray-400 mt-1">
+          {allTemplates.length} modèles disponibles
+        </p>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-r-xl flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-900 font-bold text-lg">
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        {/* Étape 1 — Recherche */}
+        <div className="space-y-6">
+          <label className="block font-black text-blue-600 uppercase tracking-widest text-xs">
+            1. Rechercher un modèle
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              className="w-full p-5 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-lg bg-white"
+              placeholder="Ex: bail, travail, vente..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (step !== "search") setStep("search");
+              }}
+            />
+            {searchTerm && step === "search" && (
+              <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-64 overflow-y-auto">
+                {filtered.length > 0 ? (
+                  filtered.map((t, i) => (
+                    <div
+                      key={i}
+                      className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-0 transition group"
+                      onClick={() => {
+                        setSelectedTemplate(t);
+                        setDetails({});
+                        setSearchTerm(t.title);
+                        setStep("form");
+                      }}
+                    >
+                      <div className="font-bold text-gray-800 group-hover:text-blue-700">
+                        {t.title}
+                      </div>
+                      <div className="text-xs text-blue-400">
+                        {t.fields?.length ?? 0} variable(s) à personnaliser
+                      </div>
+                      {t.category && (
+                        <div className="text-xs text-gray-400 mt-0.5">{t.category}</div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-gray-400 text-center italic text-sm">
+                    Aucun modèle trouvé
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Étape 2 — Formulaire dynamique */}
+        <div
+          className={`${
+            selectedTemplate ? "opacity-100" : "opacity-20 pointer-events-none"
+          } transition-all duration-500`}
+        >
+          <label className="block font-black text-blue-600 uppercase tracking-widest text-xs mb-6">
+            2. Remplir les données
+          </label>
+          <div className="space-y-5 bg-white p-8 border-2 border-gray-50 rounded-[32px] shadow-xl shadow-gray-100">
+            {/* ✅ Fix: si aucun champ, afficher message */}
+            {selectedTemplate?.fields?.length === 0 && (
+              <p className="text-sm text-gray-400 italic text-center py-4">
+                Ce modèle ne nécessite pas de variables.
+              </p>
+            )}
+            {selectedTemplate?.fields?.map((field) => (
+              <div key={field}>
+                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">
+                  {field.replace(/_/g, " ")}
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm"
+                  placeholder={`Saisir ${field.replace(/_/g, " ")}...`}
+                  value={details[field] || ""}
+                  onChange={(e) =>
+                    setDetails({ ...details, [field]: e.target.value })
+                  }
+                />
+              </div>
+            ))}
+
+            <button
+              onClick={handleGenerate}
+              disabled={!selectedTemplate}
+              className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl mt-6 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:bg-gray-200"
+            >
+              GÉNÉRER LE CONTRAT
             </button>
+
+            {selectedTemplate && (
+              <button
+                onClick={reset}
+                className="w-full text-xs text-gray-400 font-bold py-2 hover:text-red-400 transition"
+              >
+                Annuler et changer de modèle
+              </button>
+            )}
           </div>
         </div>
       </div>

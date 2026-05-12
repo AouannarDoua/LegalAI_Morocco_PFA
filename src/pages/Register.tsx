@@ -1,107 +1,188 @@
-import React, { useState } from 'react';
-import { Scale, Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { ApiError } from "../services/apiClient";
 
 export default function Register() {
-  const [showPassword, setShowPassword] = useState(false);
+  const { register } = useAuth();
+  const navigate     = useNavigate();
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-blue-900 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-blue-900/20">
-            <Scale className="text-white w-10 h-10" />
+  const [fullName,   setFullName]   = useState("");
+  const [email,      setEmail]      = useState("");
+  const [password,   setPassword]   = useState("");
+  const [confirm,    setConfirm]    = useState("");
+  const [error,      setError]      = useState<string | null>(null);
+  const [isLoading,  setIsLoading]  = useState(false);
+  // ✅ Fix: backend kiyerja3 { email_sent } — khssna nwriw message confirmation email
+  const [registered, setRegistered] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== confirm) {
+      setError("Les mots de passe ne correspondent pas");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await register(email.trim().toLowerCase(), password, fullName.trim());
+      // ✅ Fix: ma katredirectish l login — is_confirmed = False hta ydiru confirm
+      setRegistered(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─── Succès — attente confirmation email ─────────────────────────────────
+  if (registered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            📧
           </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Rejoignez LegalAI</h1>
-          <p className="text-gray-500">Créez votre compte professionnel en quelques secondes.</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Vérifiez votre email !</h1>
+          <p className="text-gray-500 text-sm mb-1">
+            Un email de confirmation a été envoyé à
+          </p>
+          <p className="font-semibold text-gray-800 mb-4">{email}</p>
+          <p className="text-gray-400 text-xs mb-6">
+            Cliquez sur le lien dans l'email pour activer votre compte.
+            Le lien expire dans 24 heures.
+          </p>
+          <div className="space-y-3">
+            <Link
+              to="/login"
+              className="block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition"
+            >
+              Aller à la connexion
+            </Link>
+            {/* ✅ Fix: resend confirmation — route /auth/resend-confirmation */}
+            <ResendButton email={email} />
+          </div>
         </div>
+      </div>
+    );
+  }
 
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 space-y-6">
-          <form className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">Prénom</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="DOUA"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">Nom</label>
-                <input 
-                  type="text" 
-                  placeholder="AOUANNAR"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-              </div>
-            </div>
+  // ─── Formulaire ──────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Créer un compte</h1>
+        <p className="text-gray-500 mb-6 text-sm">
+          Rejoignez LegalAI Maroc — votre assistant juridique intelligent
+        </p>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Entreprise</label>
-              <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Nom de votre société"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-              </div>
-            </div>
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Email professionnel</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type="email" 
-                  placeholder="nom@entreprise.ma"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="Mohammed El Amrani"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Mot de passe</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="vous@exemple.com"
+            />
+          </div>
 
-            <div className="flex items-start gap-3 ml-1">
-              <input type="checkbox" className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-              <p className="text-xs text-gray-500 leading-relaxed">
-                J'accepte les <button type="button" className="text-blue-600 font-bold hover:underline">Conditions d'Utilisation</button> et la <button type="button" className="text-blue-600 font-bold hover:underline">Politique de Confidentialité</button>.
-              </p>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="8 caractères minimum"
+            />
+          </div>
 
-            <button className="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-800 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 group">
-              Créer mon compte
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirmer le mot de passe
+            </label>
+            <input
+              type="password"
+              required
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="••••••••"
+            />
+          </div>
 
-        <p className="text-center text-sm text-gray-500">
-          Déjà un compte ?{' '}
-          <Link to="/login" className="font-bold text-blue-600 hover:underline">Connectez-vous</Link>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition"
+          >
+            {isLoading ? "Création en cours..." : "Créer mon compte"}
+          </button>
+        </form>
+
+        <p className="mt-5 text-center text-sm text-gray-500">
+          Déjà un compte ?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline font-medium">
+            Se connecter
+          </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+// ─── Resend Button ────────────────────────────────────────────────────────────
+function ResendButton({ email }: { email: string }) {
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleResend = async () => {
+    setLoading(true);
+    try {
+      const api = (await import("../services/apiClient")).default;
+      await api.post("/auth/resend-confirmation", { email });
+      setSent(true);
+    } catch {
+      alert("Erreur lors du renvoi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleResend}
+      disabled={sent || loading}
+      className="w-full px-6 py-3 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-gray-600 text-sm font-medium rounded-xl transition"
+    >
+      {sent ? "✅ Email renvoyé !" : loading ? "Envoi..." : "Renvoyer l'email de confirmation"}
+    </button>
   );
 }
