@@ -1,0 +1,235 @@
+{
+  "default_year": 2026,
+  "verification": {
+    "enabled": true,
+    "commentaire": "Sources consultees par la veille fiscale automatique. L'IA en extrait les baremes; un admin valide avant application.",
+    "sources": [
+      "https://sahlcompta.ma/blog/baremes-fiscaux-maroc-2026",
+      "https://clicpaie.ma/blogs/bareme-ir-maroc-2026/",
+      "https://clicpaie.ma/blogs/les-cotisations-cnss-au-maroc/",
+      "https://www.tax.gov.ma/"
+    ]
+  },
+  "years": {
+    "2026": {
+      "loi_finances": "Loi de Finances 2026 (n° 50-25)",
+      "source": "Code Général des Impôts 2026 — DGI Maroc",
+      "is": {
+        "type": "proportionnel",
+        "commentaire": "Depuis 2026 l'IS est proportionnel : un seul taux s'applique sur la TOTALITE du benefice net fiscal selon la tranche.",
+        "tranches": [
+          {
+            "min": 0,
+            "max": 100000000,
+            "taux": 20,
+            "label": "Benefice net fiscal < 100 000 000 DH"
+          },
+          {
+            "min": 100000000,
+            "max": null,
+            "taux": 35,
+            "label": "Benefice net fiscal >= 100 000 000 DH"
+          }
+        ],
+        "taux_secteur_financier": 40,
+        "cotisation_minimale": {
+          "taux_ca": 0.25,
+          "minimum": 3000
+        }
+      },
+      "ir": {
+        "type": "progressif",
+        "commentaire": "IR progressif par tranches sur le Revenu Net Imposable (RNI) annuel. Formule : IR = (RNI x taux) - somme a deduire.",
+        "tranches": [
+          {
+            "min": 0,
+            "max": 40000,
+            "taux": 0,
+            "deduction": 0
+          },
+          {
+            "min": 40000,
+            "max": 60000,
+            "taux": 10,
+            "deduction": 4000
+          },
+          {
+            "min": 60000,
+            "max": 80000,
+            "taux": 20,
+            "deduction": 10000
+          },
+          {
+            "min": 80000,
+            "max": 100000,
+            "taux": 30,
+            "deduction": 18000
+          },
+          {
+            "min": 100000,
+            "max": 180000,
+            "taux": 34,
+            "deduction": 22000
+          },
+          {
+            "min": 180000,
+            "max": null,
+            "taux": 37,
+            "deduction": 27400
+          }
+        ],
+        "frais_professionnels": {
+          "seuil_brut_annuel": 78000,
+          "taux_sous_seuil": 35,
+          "plafond_sous_seuil": 30000,
+          "taux_au_dessus": 25,
+          "plafond_au_dessus": 35000
+        }
+      },
+      "cnss": {
+        "plafond_mensuel": 6000,
+        "commentaire": "Part salariale 6.74% (4.48% CNSS plafonnee a 6000 DH + 2.26% AMO sans plafond). Part patronale 21.09% (8.98% CNSS plafonnee + 12.11% non plafonnee : allocations familiales + AMO + taxe formation pro).",
+        "salarie": {
+          "cnss_plafonne": 4.48,
+          "amo_non_plafonne": 2.26
+        },
+        "patronal": {
+          "cnss_plafonne": 8.98,
+          "non_plafonne": 12.11
+        }
+      },
+      "tva": {
+        "commentaire": "TVA collectee estimee sur le chiffre d'affaires. La TVA reellement due = TVA collectee - TVA deductible.",
+        "taux_disponibles": [
+          {
+            "taux": 20,
+            "label": "Taux normal (majorite des biens et services)"
+          },
+          {
+            "taux": 14,
+            "label": "Transport, beurre, energie..."
+          },
+          {
+            "taux": 10,
+            "label": "Restauration, hotellerie, operations bancaires..."
+          },
+          {
+            "taux": 7,
+            "label": "Produits de premiere necessite (eau, medicaments...)"
+          }
+        ],
+        "taux_normal": 20
+      }
+    },
+    "2025": {
+      "loi_finances": "Loi de Finances 2025 (n° 60-24)",
+      "source": "Code Général des Impôts 2025 — DGI Maroc",
+      "is": {
+        "type": "proportionnel",
+        "commentaire": "Annee de transition. Taux indicatifs.",
+        "tranches": [
+          {
+            "min": 0,
+            "max": 100000000,
+            "taux": 20,
+            "label": "Benefice net fiscal < 100 000 000 DH"
+          },
+          {
+            "min": 100000000,
+            "max": null,
+            "taux": 35,
+            "label": "Benefice net fiscal >= 100 000 000 DH"
+          }
+        ],
+        "taux_secteur_financier": 40,
+        "cotisation_minimale": {
+          "taux_ca": 0.25,
+          "minimum": 3000
+        }
+      },
+      "ir": {
+        "type": "progressif",
+        "commentaire": "Barème IR 2025 (identique a 2026, taux marginal 38%).",
+        "tranches": [
+          {
+            "min": 0,
+            "max": 40000,
+            "taux": 0,
+            "deduction": 0
+          },
+          {
+            "min": 40000,
+            "max": 60000,
+            "taux": 10,
+            "deduction": 4000
+          },
+          {
+            "min": 60000,
+            "max": 80000,
+            "taux": 20,
+            "deduction": 10000
+          },
+          {
+            "min": 80000,
+            "max": 100000,
+            "taux": 30,
+            "deduction": 18000
+          },
+          {
+            "min": 100000,
+            "max": 180000,
+            "taux": 34,
+            "deduction": 22000
+          },
+          {
+            "min": 180000,
+            "max": null,
+            "taux": 38,
+            "deduction": 29200
+          }
+        ],
+        "frais_professionnels": {
+          "seuil_brut_annuel": 78000,
+          "taux_sous_seuil": 35,
+          "plafond_sous_seuil": 30000,
+          "taux_au_dessus": 25,
+          "plafond_au_dessus": 35000
+        }
+      },
+      "cnss": {
+        "plafond_mensuel": 6000,
+        "commentaire": "Taux identiques a 2026.",
+        "salarie": {
+          "cnss_plafonne": 4.48,
+          "amo_non_plafonne": 2.26
+        },
+        "patronal": {
+          "cnss_plafonne": 8.98,
+          "non_plafonne": 12.11
+        }
+      },
+      "tva": {
+        "commentaire": "TVA collectee estimee sur le chiffre d'affaires.",
+        "taux_disponibles": [
+          {
+            "taux": 20,
+            "label": "Taux normal"
+          },
+          {
+            "taux": 14,
+            "label": "Transport, energie..."
+          },
+          {
+            "taux": 10,
+            "label": "Restauration, hotellerie..."
+          },
+          {
+            "taux": 7,
+            "label": "Produits de premiere necessite"
+          }
+        ],
+        "taux_normal": 20
+      }
+    }
+  }
+}

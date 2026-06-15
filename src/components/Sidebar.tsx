@@ -11,7 +11,10 @@ import {
   User, 
   Settings, 
   LogOut,
-  Scale
+  Scale, 
+  Calculator,
+  ShieldCheck,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -19,30 +22,33 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
-  // '/' redirige vers 'dashboard' dans ton App.tsx, donc c'est OK
   { icon: LayoutDashboard, label: 'Tableau de bord', path: '/dashboard' }, 
   { icon: Gavel, label: 'Décisions juridiques', path: '/decisions' },
   { icon: Scale, label: 'Articles de loi', path: '/articles' },
   { icon: MessageSquare, label: 'Assistant IA', path: '/chat' },
-  // CORRECTION : Doit correspondre à path="contract-generator"
   { icon: FilePlus, label: 'Générateur de contrat', path: '/contract-generator' }, 
-  // CORRECTION : Doit correspondre à path="contract-analysis"
   { icon: Search, label: 'Analyse de contrat', path: '/contract-analysis' }, 
   { icon: FileText, label: 'Mes documents', path: '/documents' },
   { icon: Bell, label: 'Notifications', path: '/notifications' },
-  // Dans Sidebar.tsx
   { icon: FileText, label: 'Mes Contrats', path: '/contracts' },
+  { icon: Calculator, label: 'Simulateur fiscal', path: '/tax-simulator' },
+  { icon: ShieldCheck, label: 'Veille fiscale', path: '/tax-admin', adminOnly: true },
 ];
 
 export default function Sidebar() {
 
-const { logout } = useAuth();
-const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-const handleLogout = () => {
-  logout();
-  navigate("/login");
-};
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  // On garde tous les liens, sauf ceux réservés aux admins si l'utilisateur n'est pas admin
+  const visibleItems = navItems.filter(
+    (item) => !item.adminOnly || user?.role === "admin"
+  );
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50">
@@ -54,7 +60,7 @@ const handleLogout = () => {
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

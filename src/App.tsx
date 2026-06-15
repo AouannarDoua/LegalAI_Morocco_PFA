@@ -24,6 +24,10 @@ import Profile           from "./pages/Profile";
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 import Layout from "./components/Layout"; // ton sidebar/navbar — adapte le nom
+import TaxSimulator from "./pages/TaxSimulator";
+import TaxAdmin from "./pages/TaxAdmin";
+import TaxProjection from "./pages/TaxProjection";
+
 
 export default function App() {
   return (
@@ -46,6 +50,7 @@ export default function App() {
               <Route path="/dashboard"          element={<Dashboard />} />
               <Route path="/chat"               element={<Chat />} />
               <Route path="/contracts"          element={<Contracts />} />
+              <Route path="/tax-simulator" element={<TaxSimulator />} />
               <Route path="/contract-analysis"  element={<ContractAnalysis />} />
               <Route path="/contract-analysis/:id" element={<ContractAnalysis />} />
               <Route path="/contract-generator" element={<ContractGenerator />} />
@@ -54,7 +59,8 @@ export default function App() {
               <Route path="/decisions/:id"      element={<DecisionDetails />} />
               <Route path="/articles"           element={<Articles />} />
               <Route path="/notifications"      element={<Notifications />} />
-              <Route path="/profile"            element={<Profile />} />
+              <Route path="/profile"            element={<Profile />} /><Route path="/tax-admin" element={<TaxAdmin />} />
+              <Route path="/tax-admin" element={<TaxAdmin />} />
             </Route>
           </Route>
 

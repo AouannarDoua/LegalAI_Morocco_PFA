@@ -2,7 +2,9 @@ import os
 from flask import Flask
 from .extensions import db, migrate, jwt, cors, bcrypt, mail
 from .config import config_map
-
+from .routes.tax import tax_bp
+from .routes.tax_admin import tax_admin_bp
+from .models.tax_update import TaxUpdate 
 
 def create_app(config_name=None):
     if config_name is None:
@@ -44,9 +46,14 @@ def create_app(config_name=None):
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(profile_bp,       url_prefix="/api/profile")
     app.register_blueprint(dashboard_bp,     url_prefix="/api/dashboard")
-
+    app.register_blueprint(tax_bp,       url_prefix="/api/tax")
+    app.register_blueprint(tax_admin_bp, url_prefix="/api/tax/admin")
     @app.route("/api/health")
     def health():
         return {"status": "ok", "app": "LegalAI Morocco API"}, 200
+    
+    from .scheduler import init_scheduler
+    init_scheduler(app)
+
 
     return app

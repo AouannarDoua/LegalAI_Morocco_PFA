@@ -103,7 +103,7 @@ def login():
             "Vérifiez votre boîte mail.", 403
         )
 
-    token = create_access_token(identity=user.id)
+    token = create_access_token(identity=str(user.id))
     return success_response({"token": token, "user": user.to_dict()})
 
 
