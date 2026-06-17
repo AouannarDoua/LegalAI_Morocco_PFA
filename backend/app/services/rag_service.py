@@ -90,9 +90,10 @@ class RAGService:
 
     # ─── RAG complet ──────────────────────────────────────────────────────────
 
-    def get_legal_answer(self, user_query: str) -> dict:
+    def get_legal_answer(self, user_query: str, lang: str = "ar") -> dict:
         """
         Retrieval + Generation — يرجع answer + source_documents.
+        lang = 'ar' (arabe, défaut) ou 'fr' (français).
         """
         source_doc = self.retrieve(user_query)
 
@@ -103,6 +104,14 @@ class RAGService:
             context = "لم يتم العثور على نموذج مطابق في قاعدة البيانات."
             title   = "غير معروف"
 
+        if lang == "fr":
+            lang_rule = ("3. Réponds en FRANÇAIS, dans un style clair et structuré "
+                         "(traduis fidèlement la terminologie juridique).")
+            not_found = "4. Si la question n'est pas couverte, dis : \"Cette information n'est pas disponible dans nos documents.\""
+        else:
+            lang_rule = "3. أجب بالعربية بأسلوب واضح ومنظم"
+            not_found = "4. إذا لم يكن السؤال مغطى، قل: \"هذه المعلومة غير متوفرة في وثائقنا\""
+
         prompt = f"""أنت مساعد قانوني مغربي خبير في صياغة العقود والاستشارات القانونية.
 
 بناءً على النموذج المرجعي التالي من قاعدة البيانات القانونية Maliyum:
@@ -111,11 +120,11 @@ class RAGService:
 
 طلب المستخدم: {user_query}
 
-قواعد الإجابة:
+قواعد الإجابة / Règles:
 1. استند فقط على المحتوى المرجعي أعلاه
 2. اذكر رقم القانون أو المادة إذا وردت في المحتوى
-3. أجب بالعربية بأسلوب واضح ومنظم
-4. إذا لم يكن السؤال مغطى، قل: "هذه المعلومة غير متوفرة في وثائقنا"
+{lang_rule}
+{not_found}
 """
 
         try:

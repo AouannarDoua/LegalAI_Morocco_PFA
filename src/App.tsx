@@ -26,8 +26,6 @@ import Profile           from "./pages/Profile";
 import Layout from "./components/Layout"; // ton sidebar/navbar — adapte le nom
 import TaxSimulator from "./pages/TaxSimulator";
 import TaxAdmin from "./pages/TaxAdmin";
-import TaxProjection from "./pages/TaxProjection";
-
 
 export default function App() {
   return (

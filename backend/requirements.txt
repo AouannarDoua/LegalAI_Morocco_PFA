@@ -7,6 +7,8 @@ flask-bcrypt==1.0.1
 python-dotenv==1.0.1
 marshmallow==3.23.1
 openai==1.61.0
+groq
+google-genai
 anthropic==0.45.0
 sqlalchemy==2.0.36
 psycopg2-binary

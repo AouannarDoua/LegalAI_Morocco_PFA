@@ -36,6 +36,8 @@ def create_app(config_name=None):
     from .routes.notifications import notifications_bp
     from .routes.profile import profile_bp
     from .routes.dashboard import dashboard_bp
+    from .routes.voice import voice_bp
+    from .routes.translate import translate_bp
 
     app.register_blueprint(auth_bp,          url_prefix="/api/auth")
     app.register_blueprint(chat_bp,          url_prefix="/api/chat")
@@ -46,6 +48,8 @@ def create_app(config_name=None):
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(profile_bp,       url_prefix="/api/profile")
     app.register_blueprint(dashboard_bp,     url_prefix="/api/dashboard")
+    app.register_blueprint(voice_bp,         url_prefix="/api/voice")
+    app.register_blueprint(translate_bp,     url_prefix="/api/translate")
     app.register_blueprint(tax_bp,       url_prefix="/api/tax")
     app.register_blueprint(tax_admin_bp, url_prefix="/api/tax/admin")
     @app.route("/api/health")
