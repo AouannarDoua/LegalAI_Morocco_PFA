@@ -30,7 +30,7 @@ export default function Contracts() {
         {/* ✅ Fix: lien vers generator */}
         <Link
           to="/contract-generator"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+          className="flex items-center gap-2 px-4 py-2 bg-mizan-600 hover:bg-mizan-700 text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus size={16} />
           Générer un contrat
@@ -60,7 +60,7 @@ export default function Contracts() {
           </p>
           <Link
             to="/contract-generator"
-            className="inline-block mt-4 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition"
+            className="inline-block mt-4 px-5 py-2 bg-mizan-600 text-white text-sm font-semibold rounded-lg hover:bg-mizan-700 transition"
           >
             Générer un contrat
           </Link>
@@ -74,7 +74,7 @@ export default function Contracts() {
             className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:shadow-sm transition"
           >
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+              <div className="p-3 bg-mizan-50 text-mizan-600 rounded-lg">
                 <FileText size={24} />
               </div>
               <div>
@@ -93,7 +93,7 @@ export default function Contracts() {
                       contract.status === "analyzed"
                         ? "bg-green-100 text-green-700"
                         : contract.status === "generated"
-                        ? "bg-blue-100 text-blue-700"
+                        ? "bg-mizan-100 text-mizan-700"
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >
@@ -117,7 +117,7 @@ export default function Contracts() {
               )}
               <Link
                 to={`/contract-analysis/${contract.id}`}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-mizan-50 hover:text-mizan-600 transition text-sm font-medium"
               >
                 <Eye size={16} />
                 Analyse

@@ -1,127 +1,124 @@
-import { Link } from "react-router-dom"; // Import indispensable
+import { Link } from "react-router-dom";
+import type { ComponentType } from "react";
+import {
+  FileText, FolderClosed, Bell, MessageSquare,
+  Search, PenLine, Scale, ArrowUpRight,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useApi } from "../hooks/useApi";
 import { dashboardService, type DashboardStats } from "../services/index";
+import { useLang } from "../i18n/LanguageContext";
 
-// ─── Stat card (Mise à jour pour accepter un lien) ──────────────────────────
+// ── textes bilingues (locaux à cette page, aucune autre modif requise) ──
+const T = {
+  fr: {
+    hi: "Bonjour", overview: "Voici un aperçu de votre espace juridique",
+    contracts: "Contrats", documents: "Documents",
+    notifications: "Notifications", questions: "Questions posées",
+    quick: "Actions rapides", loadErr: "Impossible de charger les statistiques :",
+    a1: "Analyser un contrat", a1d: "Déposer un contrat pour analyse IA",
+    a2: "Générer un contrat",  a2d: "Créer un contrat sur mesure",
+    a3: "Poser une question",  a3d: "Consulter l'assistant juridique",
+    kicker: "Tableau de bord",
+  },
+  ar: {
+    hi: "مرحباً", overview: "إليك لمحة عن فضائك القانوني",
+    contracts: "العقود", documents: "الوثائق",
+    notifications: "الإشعارات", questions: "الأسئلة المطروحة",
+    quick: "إجراءات سريعة", loadErr: "تعذّر تحميل الإحصائيات:",
+    a1: "تحليل عقد", a1d: "أودِع عقداً لتحليله بالذكاء الاصطناعي",
+    a2: "إنشاء عقد", a2d: "أنشئ عقداً مخصّصاً",
+    a3: "اطرح سؤالاً", a3d: "استشر المساعد القانوني",
+    kicker: "لوحة التحكم",
+  },
+};
 
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-  href, // Ajout du lien
-}: {
-  label: string;
-  value: number | string;
-  icon: string;
-  color: string;
-  href: string; // Destination du clic
+type IconType = ComponentType<{ className?: string }>;
+
+function StatCard({ label, value, Icon, tile, href }: {
+  label: string; value: number | string; Icon: IconType; tile: string; href: string;
 }) {
   return (
-    <Link to={href} className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-4 hover:border-blue-300 transition-all shadow-sm hover:shadow-md">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${color}`}>
-        {icon}
+    <Link to={href}
+      className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-gold-soft hover:shadow-[0_18px_40px_-28px_rgba(10,77,56,0.5)]">
+      <div className={`grid h-12 w-12 flex-none place-items-center rounded-xl ${tile}`}>
+        <Icon className="h-6 w-6" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500">{label}</p>
+        <p className="font-display text-2xl font-semibold leading-none text-ink">{value}</p>
+        <p className="mt-1 text-sm text-gray-500">{label}</p>
       </div>
+      <ArrowUpRight className="absolute end-4 top-4 h-4 w-4 text-gray-300 transition group-hover:text-mizan-600 rtl:rotate-[-90deg]" />
     </Link>
   );
 }
 
-// ─── Dashboard ─────────────────────────────────────────────────────────────
-
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: stats, isLoading, error } = useApi<DashboardStats>(
-    () => dashboardService.getStats()
-  );
+  const { lang } = useLang();
+  const L = T[lang];
+  const { data: stats, isLoading, error } = useApi<DashboardStats>(() => dashboardService.getStats());
+
+  const actions = [
+    { label: L.a1, desc: L.a1d, href: "/contract-analysis",  Icon: Search,  tile: "bg-mizan-50 text-mizan-600" },
+    { label: L.a2, desc: L.a2d, href: "/contract-generator", Icon: PenLine, tile: "bg-gold-50 text-gold-600" },
+    { label: L.a3, desc: L.a3d, href: "/chat",               Icon: Scale,   tile: "bg-emerald-50 text-emerald-600" },
+  ];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Header */}
+    <div className="mx-auto max-w-5xl">
+      {/* En-tête */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Bonjour{user?.full_name ? `, ${user.full_name}` : ""} 👋
+        <div className="page-kicker">{L.kicker}</div>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+          {L.hi}{user?.full_name ? `, ${user.full_name}` : ""} <span className="align-middle">👋</span>
         </h1>
-        <p className="text-gray-500 mt-1">
-          Voici un aperçu de votre espace juridique
-        </p>
+        <p className="mt-1 text-gray-500">{L.overview}</p>
       </div>
 
       {/* Stats */}
       {isLoading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
-              <div className="w-12 h-12 rounded-xl bg-gray-100 mb-3" />
-              <div className="h-6 bg-gray-100 rounded w-16 mb-2" />
-              <div className="h-4 bg-gray-100 rounded w-24" />
+            <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
+              <div className="mb-3 h-12 w-12 rounded-xl bg-gray-100" />
+              <div className="mb-2 h-6 w-16 rounded bg-gray-100" />
+              <div className="h-4 w-24 rounded bg-gray-100" />
             </div>
           ))}
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-          Impossible de charger les statistiques : {error}
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {L.loadErr} {error}
         </div>
       )}
 
       {stats && !isLoading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Contrats"
-            value={stats.contracts}
-            icon="📄"
-            color="bg-blue-50"
-            href="/contracts" // Redirection vers documents ou analysis
-          />
-          <StatCard
-            label="Documents"
-            value={stats.documents}
-            icon="📁"
-            color="bg-purple-50"
-            href="/documents"
-          />
-          <StatCard
-            label="Notifications"
-            value={stats.unread_notifications}
-            icon="🔔"
-            color="bg-amber-50"
-            href="/notifications" // C'est ici que ça se joue !
-          />
-          <StatCard
-            label="Questions posées"
-            value={stats.chat_sessions}
-            icon="💬"
-            color="bg-green-50"
-            href="/chat"
-          />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label={L.contracts}     value={stats.contracts}            Icon={FileText}      tile="bg-mizan-50 text-mizan-600"     href="/contracts" />
+          <StatCard label={L.documents}     value={stats.documents}            Icon={FolderClosed}  tile="bg-gold-50 text-gold-600"       href="/documents" />
+          <StatCard label={L.notifications} value={stats.unread_notifications} Icon={Bell}          tile="bg-amber-50 text-amber-600"     href="/notifications" />
+          <StatCard label={L.questions}     value={stats.chat_sessions}        Icon={MessageSquare} tile="bg-emerald-50 text-emerald-600" href="/chat" />
         </div>
       )}
 
-      {/* Quick actions */}
+      {/* Actions rapides */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: "Analyser un contrat", href: "/contract-analysis", icon: "🔍", desc: "Déposer un contrat pour analyse IA" },
-            { label: "Générer un contrat", href: "/contract-generator", icon: "✍️", desc: "Créer un contrat sur mesure" },
-            { label: "Poser une question", href: "/chat", icon: "⚖️", desc: "Consulter l'assistant juridique" },
-          ].map((action) => (
-            <Link // Utilisation de Link au lieu de <a>
-              key={action.href}
-              to={action.href}
-              className="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-sm transition group"
-            >
-              <div className="text-2xl mb-2">{action.icon}</div>
-              <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition">
-                {action.label}
+        <h2 className="mb-4 font-display text-lg font-semibold text-ink">{L.quick}</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {actions.map((a) => (
+            <Link key={a.href} to={a.href}
+              className="group rounded-2xl border border-gray-100 bg-white p-5 transition hover:-translate-y-1 hover:border-gold-soft hover:shadow-[0_18px_40px_-28px_rgba(10,77,56,0.5)]">
+              <div className={`mb-3 grid h-11 w-11 place-items-center rounded-xl ${a.tile}`}>
+                <a.Icon className="h-5 w-5" />
+              </div>
+              <p className="flex items-center gap-1 font-semibold text-gray-900 transition group-hover:text-mizan-600">
+                {a.label}
+                <ArrowUpRight className="h-4 w-4 opacity-0 transition group-hover:opacity-100 rtl:rotate-[-90deg]" />
               </p>
-              <p className="text-sm text-gray-500 mt-1">{action.desc}</p>
+              <p className="mt-1 text-sm text-gray-500">{a.desc}</p>
             </Link>
           ))}
         </div>

@@ -26,7 +26,7 @@ export default function DecisionDetails() {
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
           {error ?? "Décision introuvable"}
         </div>
-        <Link to="/decisions" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
+        <Link to="/decisions" className="mt-4 inline-block text-sm text-mizan-600 hover:underline">
           ← Retour aux décisions
         </Link>
       </div>
@@ -36,7 +36,7 @@ export default function DecisionDetails() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       {/* Breadcrumb */}
-      <Link to="/decisions" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+      <Link to="/decisions" className="text-sm text-mizan-600 hover:underline mb-4 inline-block">
         ← Retour aux décisions
       </Link>
 
@@ -60,7 +60,7 @@ export default function DecisionDetails() {
           </span>
         )}
         {decision.category && (
-          <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+          <span className="bg-mizan-50 text-mizan-700 px-3 py-1 rounded-full">
             {decision.category}
           </span>
         )}
@@ -68,9 +68,9 @@ export default function DecisionDetails() {
 
       {/* Résumé */}
       {decision.summary && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6">
-          <h2 className="text-sm font-semibold text-blue-900 mb-2">Résumé</h2>
-          <p className="text-sm text-blue-800 leading-relaxed">{decision.summary}</p>
+        <div className="bg-mizan-50 border border-mizan-100 rounded-xl p-5 mb-6">
+          <h2 className="text-sm font-semibold text-mizan-900 mb-2">Résumé</h2>
+          <p className="text-sm text-mizan-800 leading-relaxed">{decision.summary}</p>
         </div>
       )}
 

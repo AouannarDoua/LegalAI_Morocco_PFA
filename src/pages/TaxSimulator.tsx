@@ -104,7 +104,7 @@ export default function TaxSimulator() {
   const tabBtn = (m: Mode, icon: React.ReactNode, label: string) => (
     <button onClick={() => switchMode(m)}
       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-        mode === m ? "bg-blue-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+        mode === m ? "bg-mizan-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
       {icon} {label}
     </button>
   );
@@ -112,7 +112,7 @@ export default function TaxSimulator() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center gap-3 mb-1">
-        <Calculator className="w-7 h-7 text-blue-600" />
+        <Calculator className="w-7 h-7 text-mizan-600" />
         <h1 className="text-2xl font-bold text-gray-900">Simulateur fiscal marocain</h1>
       </div>
       <p className="text-gray-500 mb-5">Calcul de l'IS, TVA, CNSS et IR — ou projection prévisionnelle de fin d'année.</p>
@@ -130,14 +130,14 @@ export default function TaxSimulator() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Année (barème)</label>
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Secteur d'activité</label>
             <select value={secteur} onChange={(e) => setSecteur(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
               {SECTEURS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -148,12 +148,12 @@ export default function TaxSimulator() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Chiffre d'affaires annuel (DH)</label>
                 <input type="number" min="0" value={ca} onChange={(e) => setCa(e.target.value)} placeholder="ex : 2 000 000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bénéfice net fiscal annuel (DH)</label>
                 <input type="number" min="0" value={benefice} onChange={(e) => setBenefice(e.target.value)} placeholder="ex : 400 000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
             </>
           ) : (
@@ -161,18 +161,18 @@ export default function TaxSimulator() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mois écoulés (1 à 12)</label>
                 <input type="number" min="1" max="12" value={mois} onChange={(e) => setMois(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div className="hidden md:block" />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">CA réalisé sur la période (DH)</label>
                 <input type="number" min="0" value={caRealise} onChange={(e) => setCaRealise(e.target.value)} placeholder="ex : 500 000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Bénéfice réalisé sur la période (DH)</label>
                 <input type="number" min="0" value={beneficeRealise} onChange={(e) => setBeneficeRealise(e.target.value)} placeholder="ex : 100 000"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
             </>
           )}
@@ -180,17 +180,17 @@ export default function TaxSimulator() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre d'employés</label>
             <input type="number" min="0" value={employes} onChange={(e) => setEmployes(e.target.value)} placeholder="ex : 5"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Salaire brut mensuel moyen (DH)</label>
             <input type="number" min="0" value={salaire} onChange={(e) => setSalaire(e.target.value)} placeholder="ex : 6 000"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Taux de TVA</label>
             <select value={tauxTva} onChange={(e) => setTauxTva(parseInt(e.target.value, 10))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
               {[20, 14, 10, 7].map((t) => <option key={t} value={t}>{t}%</option>)}
             </select>
           </div>
@@ -203,7 +203,7 @@ export default function TaxSimulator() {
         {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">{error}</div>}
 
         <button onClick={handleSubmit} disabled={loading}
-          className="mt-5 w-full md:w-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-6 py-2.5 rounded-lg transition">
+          className="mt-5 w-full md:w-auto bg-mizan-600 hover:bg-mizan-700 disabled:opacity-50 text-white font-medium px-6 py-2.5 rounded-lg transition">
           {loading ? "Calcul en cours…" : mode === "simulateur" ? "Calculer" : "Projeter"}
         </button>
       </div>
@@ -213,12 +213,12 @@ export default function TaxSimulator() {
         <div className="mt-6 space-y-4 print:mt-0">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">Basé sur la <strong>{sim.meta.loi_finances}</strong></div>
-            <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 print:hidden">
+            <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-mizan-600 hover:text-mizan-800 print:hidden">
               <Printer className="w-4 h-4" /> Imprimer / PDF
             </button>
           </div>
 
-          <Card icon={<Building2 className="w-5 h-5 text-blue-600" />} title="Impôt sur les Sociétés (IS)" value={fmt(sim.is.is_du)}>
+          <Card icon={<Building2 className="w-5 h-5 text-mizan-600" />} title="Impôt sur les Sociétés (IS)" value={fmt(sim.is.is_du)}>
             <Row label="Taux applicable" value={`${sim.is.taux} %`} />
             <Row label="IS calculé" value={fmt(sim.is.is_calcule)} />
             <Row label="Cotisation minimale" value={fmt(sim.is.cotisation_minimale)} />
@@ -226,14 +226,14 @@ export default function TaxSimulator() {
             <Explain text={sim.is.explication} />
           </Card>
 
-          <Card icon={<Receipt className="w-5 h-5 text-blue-600" />} title="TVA collectée (estimée)" value={fmt(sim.tva.tva_collectee)}>
+          <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title="TVA collectée (estimée)" value={fmt(sim.tva.tva_collectee)}>
             <Row label="Taux de TVA" value={`${sim.tva.taux} %`} />
             <Row label="TVA collectée sur le CA" value={fmt(sim.tva.tva_collectee)} strong />
             <Explain text={sim.tva.explication} />
           </Card>
 
           {sim.cnss && (
-            <Card icon={<Users className="w-5 h-5 text-blue-600" />} title="Cotisations CNSS (annuelles)" value={fmt(sim.cnss.total_annuel)}>
+            <Card icon={<Users className="w-5 h-5 text-mizan-600" />} title="Cotisations CNSS (annuelles)" value={fmt(sim.cnss.total_annuel)}>
               <Row label="Part patronale (entreprise)" value={fmt(sim.cnss.patronale_annuelle_totale)} strong />
               <Row label="Part salariale (employés)" value={fmt(sim.cnss.salariale_annuelle_totale)} />
               <Row label="Total CNSS annuel" value={fmt(sim.cnss.total_annuel)} />
@@ -242,7 +242,7 @@ export default function TaxSimulator() {
           )}
 
           {sim.ir && (
-            <Card icon={<Receipt className="w-5 h-5 text-blue-600" />} title="Impôt sur le Revenu (IR) — employés" value={fmt(sim.ir.ir_annuel_total)}>
+            <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title="Impôt sur le Revenu (IR) — employés" value={fmt(sim.ir.ir_annuel_total)}>
               <Row label="RNI par employé" value={fmt(sim.ir.rni_annuel_par_employe)} />
               <Row label="Taux marginal" value={`${sim.ir.taux} %`} />
               <Row label="IR total / an" value={fmt(sim.ir.ir_annuel_total)} strong />
@@ -250,12 +250,12 @@ export default function TaxSimulator() {
             </Card>
           )}
 
-          <div className="bg-blue-600 text-white rounded-xl p-5">
+          <div className="bg-mizan-600 text-white rounded-xl p-5">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Total charges & impôts entreprise (annuel)</span>
               <span className="text-xl font-bold">{fmt(sim.totaux.total_charges_entreprise_annuel)}</span>
             </div>
-            <p className="text-blue-100 text-xs mt-2">{sim.totaux.note}</p>
+            <p className="text-mizan-100 text-xs mt-2">{sim.totaux.note}</p>
           </div>
         </div>
       )}
@@ -265,7 +265,7 @@ export default function TaxSimulator() {
         <div className="mt-6 space-y-4 print:mt-0">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">Projection sur 12 mois (× {proj.projection.facteur}) · {proj.meta.loi_finances}</div>
-            <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 print:hidden">
+            <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-mizan-600 hover:text-mizan-800 print:hidden">
               <Printer className="w-4 h-4" /> Imprimer / PDF
             </button>
           </div>
@@ -276,25 +276,25 @@ export default function TaxSimulator() {
               <Row label="Chiffre d'affaires" value={fmt(proj.realise.ca_realise)} />
               <Row label="Bénéfice" value={fmt(proj.realise.benefice_realise)} />
             </div>
-            <div className="bg-white rounded-xl border border-blue-200 p-5 shadow-sm">
-              <h2 className="font-semibold text-blue-900 mb-3">Projeté (12 mois)</h2>
+            <div className="bg-white rounded-xl border border-mizan-200 p-5 shadow-sm">
+              <h2 className="font-semibold text-mizan-900 mb-3">Projeté (12 mois)</h2>
               <Row label="Chiffre d'affaires" value={fmt(proj.projection.ca_projete)} />
               <Row label="Bénéfice" value={fmt(proj.projection.benefice_projete)} strong />
             </div>
           </div>
 
-          <div className="bg-blue-600 text-white rounded-xl p-5">
+          <div className="bg-mizan-600 text-white rounded-xl p-5">
             <div className="flex items-center justify-between">
               <span className="font-semibold">IS prévisionnel (fin d'année estimée)</span>
               <span className="text-xl font-bold">{fmt(proj.is_previsionnel)}</span>
             </div>
-            <p className="text-blue-100 text-xs mt-2">
+            <p className="text-mizan-100 text-xs mt-2">
               Charges totales entreprise estimées : {fmt(proj.simulation.totaux.total_charges_entreprise_annuel)}
             </p>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3"><Calendar className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-2 mb-3"><Calendar className="w-5 h-5 text-mizan-600" />
               <h2 className="font-semibold text-gray-900">Échéancier des acomptes d'IS</h2></div>
             <table className="w-full text-sm">
               <thead><tr className="text-left text-gray-500 border-b">

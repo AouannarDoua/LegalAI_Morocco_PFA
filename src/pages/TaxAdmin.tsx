@@ -13,7 +13,7 @@ const STATUS_LABEL: Record<string, { txt: string; cls: string }> = {
   pending:   { txt: "En attente", cls: "bg-amber-100 text-amber-800" },
   approved:  { txt: "Appliqué",   cls: "bg-green-100 text-green-800" },
   rejected:  { txt: "Refusé",     cls: "bg-gray-200 text-gray-700" },
-  no_change: { txt: "Aucun changement", cls: "bg-blue-100 text-blue-800" },
+  no_change: { txt: "Aucun changement", cls: "bg-mizan-100 text-mizan-800" },
   error:     { txt: "Erreur",     cls: "bg-red-100 text-red-700" },
 };
 
@@ -76,7 +76,7 @@ export default function TaxAdmin() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center gap-3 mb-1">
-        <ShieldCheck className="w-7 h-7 text-blue-600" />
+        <ShieldCheck className="w-7 h-7 text-mizan-600" />
         <h1 className="text-2xl font-bold text-gray-900">Veille fiscale — Administration</h1>
       </div>
       <p className="text-gray-500 mb-6">
@@ -98,7 +98,7 @@ export default function TaxAdmin() {
           ) : <span>Aucune vérification effectuée pour l'instant.</span>}
         </div>
         <button onClick={checkNow} disabled={checking}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+          className="flex items-center gap-2 bg-mizan-600 hover:bg-mizan-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
           <RefreshCw className={`w-4 h-4 ${checking ? "animate-spin" : ""}`} />
           {checking ? "Vérification…" : "Vérifier maintenant"}
         </button>
@@ -134,7 +134,7 @@ export default function TaxAdmin() {
                       <tr key={i} className="border-b border-gray-100">
                         <td className="py-2 text-gray-700">{d.indicateur}</td>
                         <td className="py-2 text-gray-500">{String(d.actuel)}</td>
-                        <td className="py-2 font-semibold text-blue-700">{String(d.detecte)}</td>
+                        <td className="py-2 font-semibold text-mizan-700">{String(d.detecte)}</td>
                       </tr>
                     ))}
                   </tbody>

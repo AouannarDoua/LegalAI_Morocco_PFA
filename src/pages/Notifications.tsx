@@ -3,7 +3,7 @@ import { useApi, useMutation } from "../hooks/useApi";
 import { notificationService, type Notification } from "../services/index";
 
 const TYPE_STYLE: Record<string, string> = {
-  info:    "bg-blue-50 border-blue-200 text-blue-800",
+  info:    "bg-mizan-50 border-mizan-200 text-mizan-800",
   warning: "bg-amber-50 border-amber-200 text-amber-800",
   success: "bg-green-50 border-green-200 text-green-800",
   error:   "bg-red-50 border-red-200 text-red-800",
@@ -43,7 +43,7 @@ export default function Notifications() {
             onClick={() => setShowUnread((v) => !v)}
             className={`px-3 py-1.5 text-sm rounded-lg border transition ${
               showUnread
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-mizan-600 text-white border-mizan-600"
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -109,7 +109,7 @@ export default function Notifications() {
               {!notif.is_read && (
                 <button
                   onClick={() => markRead(notif.id)}
-                  className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                  className="text-xs text-mizan-600 hover:underline flex-shrink-0"
                 >
                   Marquer lu
                 </button>

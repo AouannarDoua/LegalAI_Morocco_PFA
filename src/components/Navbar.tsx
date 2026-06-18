@@ -1,38 +1,48 @@
-import React from 'react';
-import { Bell, Search, User, ChevronDown } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Bell, Search, ChevronDown } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useLang } from "../i18n/LanguageContext";
+import LanguageToggle from "./LanguageToggle";
 
 export default function Navbar() {
+  const { user } = useAuth();
+  const { t } = useLang();
+
+  const name = (user as any)?.full_name || (user as any)?.fullName || (user as any)?.email || "Mizan";
+  const initials = name.split(" ").map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
+
   return (
-    <header className="h-16 bg-white border-b border-gray-200 fixed top-0 right-0 left-64 z-40 px-8 flex items-center justify-between">
-      <div className="flex-1 max-w-xl">
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Rechercher une décision, un article ou un document..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-transparent rounded-lg text-sm focus:outline-none focus:bg-white focus:border-blue-200 transition-all"
-          />
+    <header className="fixed top-0 end-0 start-64 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-8">
+      <div className="max-w-xl flex-1">
+        <div className="group relative">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-mizan-600" />
+          <input type="text" placeholder={t("navbar.search")}
+            className="w-full rounded-lg border border-transparent bg-gray-50 py-2 ps-10 pe-4 text-sm transition-all focus:border-mizan-200 focus:bg-white focus:outline-none" />
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <button className="relative p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </button>
+      <div className="flex items-center gap-5">
+        <LanguageToggle />
 
-        <div className="h-8 w-px bg-gray-200"></div>
+        <Link to="/notifications" className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-50">
+          <Bell className="h-5 w-5" />
+          <span className="absolute end-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-flag" />
+        </Link>
 
-        <button className="flex items-center gap-3 hover:bg-gray-50 p-1 pr-2 rounded-lg transition-colors">
-          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
-            AM
+        <div className="h-8 w-px bg-gray-200" />
+
+        {/* 👉 clique sur le nom → page profil */}
+        <Link to="/profile" title={t("nav.profile")}
+          className="flex items-center gap-3 rounded-lg p-1 pe-2 transition-colors hover:bg-gray-50">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mizan-100 text-sm font-semibold text-mizan-800">
+            {initials}
           </div>
-          <div className="text-left hidden sm:block">
-            <p className="text-sm font-semibold text-gray-900 leading-none">DOUA AOUANNAR</p>
-            <p className="text-xs text-gray-500 mt-1">Avocat_</p>
+          <div className="hidden text-start sm:block">
+            <p className="text-sm font-semibold leading-none text-gray-900">{name}</p>
+            <p className="mt-1 text-xs text-gray-500">{t("navbar.role")}</p>
           </div>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </button>
+          <ChevronDown className="h-4 w-4 text-gray-400" />
+        </Link>
       </div>
     </header>
   );

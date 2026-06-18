@@ -29,7 +29,7 @@ export default function Articles() {
       <div className="p-6 max-w-3xl mx-auto">
         <button
           onClick={() => setSelected(null)}
-          className="text-sm text-blue-600 hover:underline mb-4 inline-block"
+          className="text-sm text-mizan-600 hover:underline mb-4 inline-block"
         >
           ← Retour aux articles
         </button>
@@ -41,7 +41,7 @@ export default function Articles() {
             </span>
           )}
           {selected.category && (
-            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+            <span className="bg-mizan-50 text-mizan-700 px-3 py-1 rounded-full">
               {selected.category}
             </span>
           )}
@@ -76,7 +76,7 @@ export default function Articles() {
           onClick={() => { setCategory(undefined); setPage(1); }}
           className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
             !category
-              ? "bg-blue-600 text-white border-blue-600"
+              ? "bg-mizan-600 text-white border-mizan-600"
               : "border-gray-300 text-gray-600 hover:bg-gray-50"
           }`}
         >
@@ -88,7 +88,7 @@ export default function Articles() {
             onClick={() => { setCategory(cat); setPage(1); }}
             className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
               category === cat
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-mizan-600 text-white border-mizan-600"
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -127,11 +127,11 @@ export default function Articles() {
           <button
             key={article.id}
             onClick={() => setSelected(article)}
-            className="text-left bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-sm transition"
+            className="text-left bg-white border border-gray-200 rounded-xl p-5 hover:border-mizan-300 hover:shadow-sm transition"
           >
             <div className="flex items-start justify-between gap-2 mb-3">
               {article.category && (
-                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-mizan-50 text-mizan-700 px-2 py-0.5 rounded-full">
                   {article.category}
                 </span>
               )}

@@ -38,7 +38,7 @@ export default function Decisions() {
           onClick={() => { setCategory(undefined); setPage(1); }}
           className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
             !category
-              ? "bg-blue-600 text-white border-blue-600"
+              ? "bg-mizan-600 text-white border-mizan-600"
               : "border-gray-300 text-gray-600 hover:bg-gray-50"
           }`}
         >
@@ -50,7 +50,7 @@ export default function Decisions() {
             onClick={() => { setCategory(cat); setPage(1); }}
             className={`px-3 py-1.5 text-xs font-medium rounded-full border transition ${
               category === cat
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "bg-mizan-600 text-white border-mizan-600"
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -83,7 +83,7 @@ export default function Decisions() {
           {category && (
             <button
               onClick={() => setCategory(undefined)}
-              className="mt-2 text-sm text-blue-600 hover:underline"
+              className="mt-2 text-sm text-mizan-600 hover:underline"
             >
               Réinitialiser le filtre
             </button>
@@ -97,7 +97,7 @@ export default function Decisions() {
           <Link
             key={decision.id}
             to={`/decisions/${decision.id}`}
-            className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-sm transition"
+            className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-mizan-300 hover:shadow-sm transition"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -116,7 +116,7 @@ export default function Decisions() {
                     </span>
                   )}
                   {decision.category && (
-                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                    <span className="bg-mizan-50 text-mizan-700 px-2 py-0.5 rounded-full">
                       {decision.category}
                     </span>
                   )}

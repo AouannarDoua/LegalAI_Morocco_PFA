@@ -1,111 +1,60 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import api from "../services/apiClient";
+import { useLang } from "../i18n/LanguageContext";
+import AuthShell from "../components/AuthShell";
 
 type Status = "loading" | "success" | "error";
 
 export default function ConfirmEmail() {
   const [searchParams] = useSearchParams();
-  const navigate        = useNavigate();
-  const [status, setStatus]   = useState<Status>("loading");
+  const navigate = useNavigate();
+  const { t } = useLang();
+  const [status, setStatus] = useState<Status>("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const token = searchParams.get("token");
-
-    if (!token) {
-      setStatus("error");
-      setMessage("Token manquant ou invalide.");
-      return;
-    }
-
-    const confirm = async () => {
+    if (!token) { setStatus("error"); setMessage(t("auth.confirm.missing")); return; }
+    (async () => {
       try {
-        const data = await api.get<{ message: string }>(
-          `/auth/confirm-email?token=${token}`
-        );
+        await api.get<{ message: string }>(`/auth/confirm-email?token=${token}`);
         setStatus("success");
-        setMessage("Votre email a été confirmé avec succès !");
-        // Redirect vers login après 3 secondes
+        setMessage(t("auth.confirm.successBody"));
         setTimeout(() => navigate("/login", {
-          state: { message: "Email confirmé ! Vous pouvez vous connecter." }
+          state: { message: t("auth.confirm.successBody") },
         }), 3000);
       } catch (err: any) {
         setStatus("error");
-        setMessage(err?.message || "Lien invalide ou expiré.");
+        setMessage(err?.message || t("auth.confirm.expired"));
       }
-    };
-
-    confirm();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (status === "loading") {
+    return (
+      <AuthShell title={t("auth.confirm.loadingTitle")} subtitle={t("auth.confirm.loadingBody")} centered>
+        <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-mizan-600 border-t-transparent" />
+      </AuthShell>
+    );
+  }
+  if (status === "success") {
+    return (
+      <AuthShell title={t("auth.confirm.successTitle")} icon="✅" centered>
+        <p className="mb-2 text-sm text-gray-500">{message}</p>
+        <p className="mb-6 text-xs text-gray-400">{t("auth.confirm.redirecting")}</p>
+        <Link to="/login" className="btn-primary w-full py-3">{t("auth.confirm.login")}</Link>
+      </AuthShell>
+    );
+  }
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
-
-        {/* Loading */}
-        {status === "loading" && (
-          <>
-            <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Confirmation en cours...
-            </h1>
-            <p className="text-gray-500 text-sm">
-              Veuillez patienter quelques secondes.
-            </p>
-          </>
-        )}
-
-        {/* Success */}
-        {status === "success" && (
-          <>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              ✅
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Email confirmé !
-            </h1>
-            <p className="text-gray-500 text-sm mb-6">{message}</p>
-            <p className="text-gray-400 text-xs mb-4">
-              Redirection automatique vers la page de connexion...
-            </p>
-            <Link
-              to="/login"
-              className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition"
-            >
-              Se connecter maintenant
-            </Link>
-          </>
-        )}
-
-        {/* Error */}
-        {status === "error" && (
-          <>
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-              ❌
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Confirmation échouée
-            </h1>
-            <p className="text-red-600 text-sm mb-6">{message}</p>
-            <div className="space-y-3">
-              <Link
-                to="/register"
-                className="block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition"
-              >
-                Créer un nouveau compte
-              </Link>
-              <Link
-                to="/login"
-                className="block px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl transition"
-              >
-                Retour à la connexion
-              </Link>
-            </div>
-          </>
-        )}
-
+    <AuthShell title={t("auth.confirm.errorTitle")} icon="❌" centered>
+      <p className="mb-6 text-sm text-red-600">{message}</p>
+      <div className="space-y-3">
+        <Link to="/register" className="btn-primary w-full py-3">{t("auth.confirm.newAccount")}</Link>
+        <Link to="/login" className="btn-outline w-full py-3">{t("auth.confirm.back")}</Link>
       </div>
-    </div>
+    </AuthShell>
   );
 }

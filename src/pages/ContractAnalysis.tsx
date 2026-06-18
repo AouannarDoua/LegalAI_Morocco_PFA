@@ -49,7 +49,7 @@ export default function ContractAnalysis() {
   if (step === "analyzing") {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-mizan-600 border-t-transparent rounded-full animate-spin" />
         <p className="text-gray-600 font-medium">Analyse IA en cours...</p>
         <p className="text-sm text-gray-400">Cela peut prendre 10 à 30 secondes</p>
       </div>
@@ -64,7 +64,7 @@ export default function ContractAnalysis() {
           <h1 className="text-2xl font-bold text-gray-900">Résultat de l'analyse</h1>
           <button
             onClick={reset}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-mizan-600 hover:underline"
           >
             ← Nouvelle analyse
           </button>
@@ -72,9 +72,9 @@ export default function ContractAnalysis() {
 
         <div className="space-y-5">
           {/* Résumé */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <h2 className="font-semibold text-blue-900 mb-2">📋 Résumé</h2>
-            <p className="text-blue-800 text-sm leading-relaxed">{analysis.summary}</p>
+          <div className="bg-mizan-50 border border-mizan-200 rounded-xl p-5">
+            <h2 className="font-semibold text-mizan-900 mb-2">📋 Résumé</h2>
+            <p className="text-mizan-800 text-sm leading-relaxed">{analysis.summary}</p>
           </div>
 
           {/* Risques */}
@@ -140,7 +140,7 @@ export default function ContractAnalysis() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mizan-500 outline-none"
             placeholder="Bail commercial, Contrat de travail..."
           />
         </div>
@@ -150,7 +150,7 @@ export default function ContractAnalysis() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mizan-500 outline-none"
           >
             <option value="">Sélectionner (optionnel)</option>
             <option value="bail">Bail / Location</option>
@@ -168,7 +168,7 @@ export default function ContractAnalysis() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={12}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y text-sm"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mizan-500 outline-none resize-y text-sm"
             placeholder="Collez ici le texte complet de votre contrat..."
           />
         </div>
@@ -176,7 +176,7 @@ export default function ContractAnalysis() {
         <button
           onClick={handleAnalyze}
           disabled={!title.trim() || !content.trim()}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-xl transition"
+          className="w-full py-3 bg-mizan-600 hover:bg-mizan-700 disabled:bg-mizan-300 text-white font-semibold rounded-xl transition"
         >
           Analyser avec l'IA
         </button>

@@ -96,8 +96,8 @@ export default function ContractGenerator() {
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center h-96 gap-4">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-        <p className="text-gray-500 animate-pulse">Chargement des modèles LegalAI...</p>
+        <div className="w-12 h-12 border-4 border-mizan-200 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-gray-500 animate-pulse">Chargement des modèles Mizan...</p>
       </div>
     );
   }
@@ -107,8 +107,8 @@ export default function ContractGenerator() {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-6">
         <div className="relative w-20 h-20">
-          <div className="w-20 h-20 border-4 border-blue-100 rounded-full" />
-          <div className="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0" />
+          <div className="w-20 h-20 border-4 border-mizan-100 rounded-full" />
+          <div className="w-20 h-20 border-4 border-mizan-600 border-t-transparent rounded-full animate-spin absolute top-0" />
         </div>
         <p className="text-xl font-bold text-gray-800">Intelligence Artificielle en action...</p>
         <p className="text-sm text-gray-400">Génération du contrat en cours via RAG</p>
@@ -122,7 +122,7 @@ export default function ContractGenerator() {
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-blue-900">{selectedTemplate?.title}</h1>
+            <h1 className="text-2xl font-bold text-mizan-900">{selectedTemplate?.title}</h1>
             <p className="text-sm text-gray-500">Document généré avec succès</p>
           </div>
           <div className="flex gap-3">
@@ -134,7 +134,7 @@ export default function ContractGenerator() {
             </button>
             <button
               onClick={reset}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg"
+              className="px-6 py-2 bg-mizan-600 text-white rounded-xl font-bold hover:bg-mizan-700 transition shadow-lg"
             >
               Nouveau contrat
             </button>
@@ -187,7 +187,7 @@ export default function ContractGenerator() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-10">
         <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">
-          LegalAI Generator
+          Mizan Generator
         </h1>
         <p className="text-gray-500 text-lg">
           Créez vos documents juridiques instantanément.
@@ -210,13 +210,13 @@ export default function ContractGenerator() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Étape 1 — Recherche */}
         <div className="space-y-6">
-          <label className="block font-black text-blue-600 uppercase tracking-widest text-xs">
+          <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs">
             1. Rechercher un modèle
           </label>
           <div className="relative">
             <input
               type="text"
-              className="w-full p-5 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-lg bg-white"
+              className="w-full p-5 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-mizan-500 focus:ring-4 focus:ring-mizan-50 transition-all text-lg bg-white"
               placeholder="Ex: bail, travail, vente..."
               value={searchTerm}
               onChange={(e) => {
@@ -230,7 +230,7 @@ export default function ContractGenerator() {
                   filtered.map((t, i) => (
                     <div
                       key={i}
-                      className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-0 transition group"
+                      className="p-4 hover:bg-mizan-50 cursor-pointer border-b last:border-0 transition group"
                       onClick={() => {
                         setSelectedTemplate(t);
                         setDetails({});
@@ -238,10 +238,10 @@ export default function ContractGenerator() {
                         setStep("form");
                       }}
                     >
-                      <div className="font-bold text-gray-800 group-hover:text-blue-700">
+                      <div className="font-bold text-gray-800 group-hover:text-mizan-700">
                         {t.title}
                       </div>
-                      <div className="text-xs text-blue-400">
+                      <div className="text-xs text-mizan-400">
                         {t.fields?.length ?? 0} variable(s) à personnaliser
                       </div>
                       {t.category && (
@@ -265,7 +265,7 @@ export default function ContractGenerator() {
             selectedTemplate ? "opacity-100" : "opacity-20 pointer-events-none"
           } transition-all duration-500`}
         >
-          <label className="block font-black text-blue-600 uppercase tracking-widest text-xs mb-6">
+          <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs mb-6">
             2. Remplir les données
           </label>
           <div className="space-y-5 bg-white p-8 border-2 border-gray-50 rounded-[32px] shadow-xl shadow-gray-100">
@@ -282,7 +282,7 @@ export default function ContractGenerator() {
                 </label>
                 <input
                   type="text"
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm"
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-mizan-100 outline-none transition-all text-sm"
                   placeholder={`Saisir ${field.replace(/_/g, " ")}...`}
                   value={details[field] || ""}
                   onChange={(e) =>
@@ -295,7 +295,7 @@ export default function ContractGenerator() {
             <button
               onClick={handleGenerate}
               disabled={!selectedTemplate}
-              className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl mt-6 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:bg-gray-200"
+              className="w-full py-5 bg-mizan-600 hover:bg-mizan-700 text-white font-black rounded-2xl mt-6 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:bg-gray-200"
             >
               GÉNÉRER LE CONTRAT
             </button>

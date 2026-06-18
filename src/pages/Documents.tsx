@@ -56,7 +56,7 @@ export default function Documents() {
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+          className="px-4 py-2 bg-mizan-600 hover:bg-mizan-700 text-white text-sm font-semibold rounded-lg transition"
         >
           {showForm ? "Annuler" : "+ Nouveau document"}
         </button>
@@ -74,12 +74,12 @@ export default function Documents() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre du document *"
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-mizan-500 outline-none"
           />
           <select
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-mizan-500 outline-none"
           >
             <option value="">Type de document (optionnel)</option>
             <option value="identite">Pièce d'identité</option>
@@ -91,7 +91,7 @@ export default function Documents() {
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold rounded-lg transition"
+            className="px-5 py-2 bg-mizan-600 hover:bg-mizan-700 disabled:bg-mizan-400 text-white text-sm font-semibold rounded-lg transition"
           >
             {creating ? "Création..." : "Créer"}
           </button>
@@ -124,7 +124,7 @@ export default function Documents() {
             className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between hover:border-gray-300 transition"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-lg">
+              <div className="w-10 h-10 bg-mizan-50 rounded-lg flex items-center justify-center text-lg">
                 📄
               </div>
               <div>

@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./i18n/LanguageContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// ─── Page d'accueil (publique) ─────────────────────────────────────────────────
+import Landing from "./pages/Landing";
 
 // ─── Pages publiques ──────────────────────────────────────────────────────────
 import Login          from "./pages/Login";
@@ -23,51 +27,54 @@ import Notifications     from "./pages/Notifications";
 import Profile           from "./pages/Profile";
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
-import Layout from "./components/Layout"; // ton sidebar/navbar — adapte le nom
+import Layout from "./components/Layout";
 import TaxSimulator from "./pages/TaxSimulator";
 import TaxAdmin from "./pages/TaxAdmin";
 
 export default function App() {
   return (
     <BrowserRouter>
-      {/* ✅ Fix: AuthProvider englobe tout — useAuth accessible partout */}
-      <AuthProvider>
-        <Routes>
+      {/* ✅ LanguageProvider englobe tout — FR/AR + RTL accessibles partout */}
+      <LanguageProvider>
+        <AuthProvider>
+          <Routes>
 
-          {/* ── Routes publiques ─────────────────────────────────────────── */}
-          <Route path="/login"           element={<Login />} />
-          <Route path="/register"        element={<Register />} />
-          <Route path="/confirm-email"   element={<ConfirmEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password"  element={<ResetPassword />} />
+            {/* ── Accueil public (présentation de l'app) ─────────────────────── */}
+            <Route path="/" element={<Landing />} />
 
-          {/* ── Routes protégées — ProtectedRoute vérifie le token ────────── */}
-          {/* ✅ Fix: isLoading spinner évite redirect prématuré après login  */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/dashboard"          element={<Dashboard />} />
-              <Route path="/chat"               element={<Chat />} />
-              <Route path="/contracts"          element={<Contracts />} />
-              <Route path="/tax-simulator" element={<TaxSimulator />} />
-              <Route path="/contract-analysis"  element={<ContractAnalysis />} />
-              <Route path="/contract-analysis/:id" element={<ContractAnalysis />} />
-              <Route path="/contract-generator" element={<ContractGenerator />} />
-              <Route path="/documents"          element={<Documents />} />
-              <Route path="/decisions"          element={<Decisions />} />
-              <Route path="/decisions/:id"      element={<DecisionDetails />} />
-              <Route path="/articles"           element={<Articles />} />
-              <Route path="/notifications"      element={<Notifications />} />
-              <Route path="/profile"            element={<Profile />} /><Route path="/tax-admin" element={<TaxAdmin />} />
-              <Route path="/tax-admin" element={<TaxAdmin />} />
+            {/* ── Routes publiques ───────────────────────────────────────────── */}
+            <Route path="/login"           element={<Login />} />
+            <Route path="/register"        element={<Register />} />
+            <Route path="/confirm-email"   element={<ConfirmEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password"  element={<ResetPassword />} />
+
+            {/* ── Routes protégées ───────────────────────────────────────────── */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/dashboard"             element={<Dashboard />} />
+                <Route path="/chat"                  element={<Chat />} />
+                <Route path="/contracts"             element={<Contracts />} />
+                <Route path="/tax-simulator"         element={<TaxSimulator />} />
+                <Route path="/contract-analysis"     element={<ContractAnalysis />} />
+                <Route path="/contract-analysis/:id" element={<ContractAnalysis />} />
+                <Route path="/contract-generator"    element={<ContractGenerator />} />
+                <Route path="/documents"             element={<Documents />} />
+                <Route path="/decisions"             element={<Decisions />} />
+                <Route path="/decisions/:id"         element={<DecisionDetails />} />
+                <Route path="/articles"              element={<Articles />} />
+                <Route path="/notifications"         element={<Notifications />} />
+                <Route path="/profile"               element={<Profile />} />
+                <Route path="/tax-admin"             element={<TaxAdmin />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* ── Fallback ─────────────────────────────────────────────────── */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* ── Fallback ───────────────────────────────────────────────────── */}
+            <Route path="*" element={<Navigate to="/" replace />} />
 
-        </Routes>
-      </AuthProvider>
+          </Routes>
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }
