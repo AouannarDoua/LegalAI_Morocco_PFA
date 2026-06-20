@@ -4,6 +4,8 @@ export const extra2 = {
     ui: {
       showHistory: "Afficher l'historique",
       hideHistory: "Masquer l'historique",
+      collapse: "Réduire le menu",
+      expand: "Ouvrir le menu",
       kingdom: "Royaume du Maroc",
     },
     profile: {
@@ -30,6 +32,8 @@ export const extra2 = {
     ui: {
       showHistory: "إظهار السجل",
       hideHistory: "إخفاء السجل",
+      collapse: "تصغير القائمة",
+      expand: "فتح القائمة",
       kingdom: "المملكة المغربية",
     },
     profile: {

@@ -96,7 +96,7 @@ function MessageBubble({
 
 export default function Chat() {
   const { t } = useLang();
-  const [showHistory, setShowHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);  // masqué par défaut, ouvrable via le bouton
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);

@@ -1,108 +1,260 @@
-import { useState, useEffect } from "react";
-import contractService from "../services/contractService";
-import apiClient, { ApiError } from "../services/apiClient";
+import { useState, useEffect, useMemo } from "react";
+import { Search, FileText, Star, ListChecks, ChevronRight, AlertCircle, Download, Loader2, X, Pencil, Save } from "lucide-react";
+import contractService, {
+  type ContractTypeInfo,
+  type ContractField,
+} from "../services/contractService";
+import { BASE_URL, tokenStorage, ApiError } from "../services/apiClient";
 
-const API_BASE_URL = "http://localhost:5000";
+/* ────────────────────────────────────────────────────────────────────────────
+ * ContractGenerator — FORMULAIRE DYNAMIQUE PAR TYPE DE CONTRAT
+ * Réplique exacte de la logique du script v12 (test.py) :
+ *   1. On charge les 20 types depuis GET /contracts/types
+ *      (chaque type a ses champs: name / label arabe / type / required / default)
+ *   2. L'utilisateur cherche & choisit un TYPE de contrat
+ *   3. On affiche un formulaire dynamique = display_form_by_contract_type()
+ *        ⭐ champs obligatoires   (validation: non vide, number=chiffres, date valide)
+ *        📋 champs optionnels
+ *      + cohérence des dates (date_debut <= date_fin)
+ *   4. On génère via POST /contracts/generate puis on affiche le PDF arabe (RTL)
+ * ──────────────────────────────────────────────────────────────────────────── */
 
-interface ContractTemplate {
-  title:    string;
-  fields:   string[];
-  category?: string;
-  url?:      string;
-  download?: string;
+type Step = "search" | "form" | "generating" | "result";
+
+// dd/mm/yyyy  ->  yyyy-mm-dd  (pour <input type="date">)
+function toInputDate(ddmmyyyy?: string): string {
+  if (!ddmmyyyy) return "";
+  const m = ddmmyyyy.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return "";
+  const [, d, mo, y] = m;
+  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
+// yyyy-mm-dd  ->  dd/mm/yyyy  (format canonique attendu par le backend / le prompt)
+function fromInputDate(yyyymmdd: string): string {
+  if (!yyyymmdd) return "";
+  const m = yyyymmdd.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return yyyymmdd;
+  const [, y, mo, d] = m;
+  return `${d.padStart(2, "0")}/${mo.padStart(2, "0")}/${y}`;
+}
+
+// dd/mm/yyyy -> Date (pour comparer date_debut / date_fin)
+function parseDdmmyyyy(s?: string): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [, d, mo, y] = m;
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d));
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+// Équivalences FR/EN → arabe (recherche bilingue, comme l'ancienne page)
+const SEARCH_ALIASES: Record<string, string[]> = {
+  bail: ["كراء", "إيجار"], location: ["كراء", "إيجار"], loyer: ["كراء"], rent: ["كراء"],
+  travail: ["عمل", "شغل"], emploi: ["عمل", "شغل"], employe: ["عمل", "أجير"],
+  cdi: ["عمل"], cdd: ["عمل"], salarie: ["عمل", "أجير"],
+  vente: ["بيع"], achat: ["بيع", "شراء"], acheter: ["شراء"],
+  societe: ["شركة", "تأسيس"], sarl: ["شركة", "ش.م.م", "مسؤولية", "SARL"], entreprise: ["شركة"],
+  statuts: ["نظام أساسي", "شركة"],
+  procuration: ["وكالة", "توكيل"], mandat: ["وكالة"], agence: ["وكالة"],
+  resiliation: ["فسخ", "إنهاء"], rupture: ["فسخ", "إنهاء"],
+  attestation: ["تصريح", "شهادة"], declaration: ["تصريح"], hebergement: ["سكن", "إيواء"],
+  service: ["خدمات"], services: ["خدمات"], prestation: ["خدمات"],
+  partenariat: ["شراكة"], partenaire: ["شراكة"],
+  distribution: ["توزيع"], distributeur: ["توزيع"],
+  transport: ["نقل", "بضائع"], marchandise: ["نقل", "بضائع"],
+  financement: ["تمويل", "قرض"], credit: ["قرض", "تمويل"], pret: ["قرض"],
+  confidentialite: ["سرية"], nda: ["سرية"], secret: ["سرية"],
+  import: ["تجارة", "استيراد"], export: ["تجارة", "تصدير"], international: ["دولية"],
+  construction: ["مقاولة", "بناء"], travaux: ["مقاولة", "أشغال"],
+  mise: ["إنذار"], demeure: ["إنذار"],
+  etat: ["بيان", "معاينة"], lieux: ["بيان", "معاينة"],
+};
+
 export default function ContractGenerator() {
-  const [allTemplates,      setAllTemplates]      = useState<ContractTemplate[]>([]);
-  const [searchTerm,        setSearchTerm]        = useState("");
-  const [selectedTemplate,  setSelectedTemplate]  = useState<ContractTemplate | null>(null);
-  const [details,           setDetails]           = useState<Record<string, string>>({});
-  const [step,              setStep]              = useState<"search" | "form" | "generating" | "result">("search");
-  const [error,             setError]             = useState<string | null>(null);
-  const [pdfUrl,            setPdfUrl]            = useState<string | null>(null);
-  const [isLoading,         setIsLoading]         = useState(true);
+  const [types,    setTypes]    = useState<ContractTypeInfo[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [step,     setStep]     = useState<Step>("search");
+  const [selected, setSelected] = useState<ContractTypeInfo | null>(null);
+  const [search,   setSearch]   = useState("");
+  const [details,  setDetails]  = useState<Record<string, string>>({});
+  const [error,    setError]    = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // ✅ Fix: GET /api/contracts/templates — backend kiyerja3 { data: [...] } via success_response
+  const [pdfUrl,       setPdfUrl]       = useState<string | null>(null);
+  const [downloadName, setDownloadName] = useState("contrat.pdf");
+
+  // Édition du contrat généré (mode avocat)
+  const [generated,   setGenerated]   = useState<any | null>(null); // contrat {id, content, title}
+  const [editing,     setEditing]     = useState(false);
+  const [editedText,  setEditedText]  = useState("");
+  const [saving,      setSaving]      = useState(false);
+
+  // 1) Charger les 20 types (avec leurs champs)
   useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-
-    apiClient
-      .get<{ data: ContractTemplate[] }>("/contracts/templates")
-      .then((res: any) => {
-        if (!isMounted) return;
-        // ✅ Fix: Flask success_response kiyerja3 { success, data, message }
-        const raw = res?.data ?? res;
-        const templates = Array.isArray(raw) ? raw : (raw?.data ?? []);
-        setAllTemplates(
-          templates.filter(
-            (t: any) => t && typeof t.title === "string"
-          )
-        );
-        setIsLoading(false);
+    let alive = true;
+    contractService
+      .types()
+      .then((data) => {
+        if (!alive) return;
+        setTypes(Array.isArray(data) ? data : []);
+        setLoading(false);
       })
-      .catch((err: any) => {
-        if (!isMounted) return;
-        console.error("Erreur chargement templates:", err);
-        setError("Impossible de charger les modèles de contrats.");
-        setIsLoading(false);
+      .catch((err) => {
+        if (!alive) return;
+        console.error("Erreur chargement des types:", err);
+        setError("Impossible de charger les types de contrats.");
+        setLoading(false);
       });
-
-    return () => { isMounted = false; };
+    return () => { alive = false; };
   }, []);
 
-  // Filtrage — protégé contre undefined
-  const filtered = allTemplates.filter(
-    (t) =>
-      t?.title &&
-      t.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Recherche bilingue sur le nom arabe du type
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return types;
+    const aliases = SEARCH_ALIASES[q] || SEARCH_ALIASES[q.replace(/s$/, "")] || [];
+    return types.filter((t) => {
+      const name = t.name.toLowerCase();
+      if (name.includes(q)) return true;
+      return aliases.some((a) => t.name.includes(a));
+    });
+  }, [types, search]);
 
-  const handleGenerate = async () => {
-    if (!selectedTemplate) return;
+  // Champs obligatoires / optionnels (exactement comme display_form_by_contract_type)
+  const requiredFields = selected?.fields.filter((f) => f.required) ?? [];
+  const optionalFields = selected?.fields.filter((f) => !f.required) ?? [];
+
+  function chooseType(t: ContractTypeInfo) {
+    // pré-remplir les valeurs par défaut (ex: date_contrat = aujourd'hui)
+    const init: Record<string, string> = {};
+    t.fields.forEach((f) => { if (f.default) init[f.name] = f.default; });
+    setSelected(t);
+    setDetails(init);
+    setFieldErrors({});
     setError(null);
-    setStep("generating");
+    setStep("form");
+  }
 
+  function setField(field: ContractField, raw: string) {
+    let value = raw;
+    if (field.type === "number") {
+      // chiffres uniquement (comme re.sub(r'[^\d]', '', value))
+      value = raw.replace(/[^\d]/g, "");
+    } else if (field.type === "date") {
+      // l'input renvoie yyyy-mm-dd, on stocke en dd/mm/yyyy
+      value = fromInputDate(raw);
+    }
+    setDetails((d) => ({ ...d, [field.name]: value }));
+    if (fieldErrors[field.name]) {
+      setFieldErrors((e) => { const n = { ...e }; delete n[field.name]; return n; });
+    }
+  }
+
+  // Validation client = required non vide + cohérence des dates
+  function validate(): boolean {
+    const errs: Record<string, string> = {};
+    requiredFields.forEach((f) => {
+      const v = (details[f.name] || "").trim();
+      if (!v) errs[f.name] = "هذا الحقل إجباري — champ obligatoire";
+    });
+    const debut = parseDdmmyyyy(details["date_debut"]);
+    const fin   = parseDdmmyyyy(details["date_fin"]);
+    if (debut && fin && debut > fin) {
+      errs["date_fin"] = "تاريخ البداية بعد تاريخ النهاية — date début après date fin";
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function handleGenerate() {
+    if (!selected) return;
+    setError(null);
+    if (!validate()) {
+      setError("Veuillez corriger les champs en rouge avant de générer.");
+      return;
+    }
+    setStep("generating");
     try {
-      // ✅ Fix: contractService.generate kiyerja3 l'objet contract avec file_name
       const result = await contractService.generate({
-        contract_type: selectedTemplate.title,
+        contract_type: selected.name,   // on envoie le NOM ARABE du type (clé exacte)
         details,
       });
-
       const fileName = (result as any)?.file_name;
       if (!fileName) throw new Error("Nom de fichier manquant dans la réponse");
 
-      setPdfUrl(`${API_BASE_URL}/api/contracts/download/${fileName}`);
+      setGenerated(result);                          // {id, content, title, file_name}
+      setEditedText((result as any)?.content || "");
+      await loadPdf(fileName);
       setStep("result");
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Erreur lors de la génération du PDF"
-      );
+      setError(err instanceof ApiError ? err.message : "Erreur lors de la génération du contrat");
       setStep("form");
     }
-  };
+  }
 
-  const reset = () => {
-    setSearchTerm("");
-    setSelectedTemplate(null);
-    setDetails({});
-    setPdfUrl(null);
-    setStep("search");
+  // Récupère le PDF (avec JWT) et l'affiche en aperçu
+  async function loadPdf(fileName: string) {
+    const token = tokenStorage.get();
+    const resp = await fetch(`${BASE_URL}/contracts/download/${fileName}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!resp.ok) throw new Error("Téléchargement du document échoué");
+    const blob = await resp.blob();
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(URL.createObjectURL(blob));
+    setDownloadName(fileName);
+  }
+
+  // Enregistre le texte édité par l'avocat → régénère le PDF
+  async function handleSaveEdit() {
+    if (!generated?.id) return;
+    if (editedText.trim().length < 30) {
+      setError("Le texte est trop court.");
+      return;
+    }
+    setSaving(true);
     setError(null);
-  };
+    try {
+      const updated = await contractService.rerender(generated.id, editedText, generated.title);
+      const fileName = (updated as any)?.file_name;
+      if (!fileName) throw new Error("PDF non régénéré");
+      setGenerated(updated);
+      await loadPdf(fileName);
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Échec de l'enregistrement des modifications");
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  // ─── Loading ──────────────────────────────────────────────────────────────
-  if (isLoading) {
+  function reset() {
+    setSelected(null);
+    setSearch("");
+    setDetails({});
+    setFieldErrors({});
+    setError(null);
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+    setGenerated(null);
+    setEditing(false);
+    setEditedText("");
+    setStep("search");
+  }
+
+  /* ── Loading ─────────────────────────────────────────────────────────── */
+  if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-96 gap-4">
-        <div className="w-12 h-12 border-4 border-mizan-200 border-t-blue-600 rounded-full animate-spin" />
-        <p className="text-gray-500 animate-pulse">Chargement des modèles Mizan...</p>
+        <Loader2 className="w-12 h-12 text-mizan-600 animate-spin" />
+        <p className="text-gray-500 animate-pulse">Chargement des types de contrats…</p>
       </div>
     );
   }
 
-  // ─── Generating ───────────────────────────────────────────────────────────
+  /* ── Generating ──────────────────────────────────────────────────────── */
   if (step === "generating") {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-6">
@@ -110,207 +262,270 @@ export default function ContractGenerator() {
           <div className="w-20 h-20 border-4 border-mizan-100 rounded-full" />
           <div className="w-20 h-20 border-4 border-mizan-600 border-t-transparent rounded-full animate-spin absolute top-0" />
         </div>
-        <p className="text-xl font-bold text-gray-800">Intelligence Artificielle en action...</p>
-        <p className="text-sm text-gray-400">Génération du contrat en cours via RAG</p>
+        <p className="text-xl font-bold text-gray-800">Génération du contrat en cours…</p>
+        <p className="text-sm text-gray-400">Recherche juridique (RAG) + rédaction en arabe</p>
       </div>
     );
   }
 
-  // ─── Result ───────────────────────────────────────────────────────────────
+  /* ── Result ──────────────────────────────────────────────────────────── */
   if (step === "result") {
     return (
       <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-mizan-900">{selectedTemplate?.title}</h1>
-            <p className="text-sm text-gray-500">Document généré avec succès</p>
+            <h1 className="text-2xl font-bold text-mizan-900 font-ar" dir="rtl">{selected?.name}</h1>
+            <p className="text-sm text-gray-500">
+              {editing ? "Mode édition — corrigez le texte puis enregistrez" : "Document généré avec succès"}
+            </p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setStep("form")}
-              className="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition font-medium"
-            >
-              Modifier
+          <div className="flex flex-wrap gap-3">
+            {!editing && (
+              <button onClick={() => { setEditedText((generated as any)?.content || editedText); setEditing(true); }}
+                className="flex items-center gap-2 px-5 py-2 bg-gold-100 text-gold-700 hover:bg-gold-200 rounded-xl transition font-bold">
+                <Pencil className="w-4 h-4" /> Modifier le texte
+              </button>
+            )}
+            <button onClick={() => setStep("form")}
+              className="px-5 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition font-medium">
+              Modifier les données
             </button>
-            <button
-              onClick={reset}
-              className="px-6 py-2 bg-mizan-600 text-white rounded-xl font-bold hover:bg-mizan-700 transition shadow-lg"
-            >
+            <button onClick={reset}
+              className="px-5 py-2 bg-mizan-600 text-white rounded-xl font-bold hover:bg-mizan-700 transition shadow-lg">
               Nouveau contrat
             </button>
           </div>
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-r-xl flex justify-between items-center">
+            <span className="flex items-center gap-2"><AlertCircle className="w-5 h-5" />{error}</span>
+            <button onClick={() => setError(null)}><X className="w-5 h-5" /></button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* PDF Viewer */}
           <div className="lg:col-span-2 border-2 border-gray-100 rounded-3xl overflow-hidden h-[750px] bg-white shadow-2xl">
-            {pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                width="100%"
-                height="100%"
-                title="Contrat PDF"
-                className="border-none"
+            {editing ? (
+              <textarea
+                dir="rtl"
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className="w-full h-full p-6 outline-none resize-none font-ar text-[15px] leading-8 text-ink"
+                placeholder="نص العقد…"
+                spellCheck={false}
               />
+            ) : pdfUrl ? (
+              <iframe
+                src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                width="100%" height="100%" title="Contrat PDF" className="border-none" />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                Préparation de l'aperçu...
-              </div>
+              <div className="flex items-center justify-center h-full text-gray-400">Préparation de l'aperçu…</div>
             )}
           </div>
 
-          {/* Actions */}
           <div className="space-y-4">
-            <div className="bg-green-50 p-6 rounded-3xl border border-green-100 shadow-sm">
-              <div className="text-3xl mb-2">📄</div>
-              <h3 className="font-bold text-green-900 mb-2">Document prêt !</h3>
-              <p className="text-sm text-green-700 mb-6">
-                Le contrat est conforme aux réglementations en vigueur.
-              </p>
-              <a
-                href={pdfUrl || "#"}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full text-center py-4 bg-green-600 text-white rounded-2xl font-bold shadow-lg hover:bg-green-700 transition hover:-translate-y-1"
-              >
-                Télécharger le PDF
-              </a>
-            </div>
+            {editing ? (
+              <div className="bg-gold-50 p-6 rounded-3xl border border-gold-200 shadow-sm">
+                <Pencil className="w-8 h-8 text-gold-600 mb-2" />
+                <h3 className="font-bold text-gold-700 mb-2">Édition du contrat</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Corrigez un nom, supprimez ou reformulez une phrase, puis enregistrez :
+                  le PDF est régénéré avec la même mise en page (logo, articles, signatures).
+                </p>
+                <button onClick={handleSaveEdit} disabled={saving}
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-mizan-600 text-white rounded-2xl font-bold shadow-lg hover:bg-mizan-700 transition disabled:opacity-60">
+                  {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  {saving ? "Enregistrement…" : "Enregistrer et régénérer le PDF"}
+                </button>
+                <button onClick={() => { setEditing(false); setError(null); setEditedText((generated as any)?.content || ""); }}
+                  disabled={saving}
+                  className="w-full mt-2 py-2 text-sm text-gray-500 font-bold hover:text-red-400 transition">
+                  Annuler les modifications
+                </button>
+              </div>
+            ) : (
+              <div className="bg-mizan-50 p-6 rounded-3xl border border-mizan-100 shadow-sm">
+                <FileText className="w-8 h-8 text-mizan-600 mb-2" />
+                <h3 className="font-bold text-mizan-900 mb-2">Document prêt !</h3>
+                <p className="text-sm text-mizan-700 mb-6">
+                  Vérifiez le contrat. Une erreur ? Cliquez « Modifier le texte » pour corriger avant de télécharger.
+                </p>
+                <a href={pdfUrl || "#"} download={downloadName} target="_blank" rel="noreferrer"
+                  className="flex items-center justify-center gap-2 w-full text-center py-4 bg-mizan-600 text-white rounded-2xl font-bold shadow-lg hover:bg-mizan-700 transition hover:-translate-y-1">
+                  <Download className="w-5 h-5" /> Télécharger le PDF
+                </a>
+              </div>
+            )}
+
+            {!editing && selected && selected.clauses.length > 0 && (
+              <div className="bg-mizan-50 p-6 rounded-3xl border border-mizan-100">
+                <h3 className="font-bold text-mizan-900 mb-3 flex items-center gap-2">
+                  <ListChecks className="w-5 h-5" /> {selected.clauses.length} clauses incluses
+                </h3>
+                <ul className="space-y-1 text-sm text-mizan-800 font-ar" dir="rtl">
+                  {selected.clauses.map((c, i) => <li key={i}>• {c}</li>)}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // ─── Main form ────────────────────────────────────────────────────────────
+  /* ── Search + Form ───────────────────────────────────────────────────── */
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">
-          Mizan Generator
-        </h1>
-        <p className="text-gray-500 text-lg">
-          Créez vos documents juridiques instantanément.
-        </p>
-        {/* ✅ Indicateur nombre de modèles */}
-        <p className="text-xs text-gray-400 mt-1">
-          {allTemplates.length} modèles disponibles
-        </p>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">LegalAI Generator</h1>
+        <p className="text-gray-500 text-lg">Choisissez un type de contrat, remplissez le formulaire, générez le PDF.</p>
+        <p className="text-xs text-gray-400 mt-1">{types.length} types de contrats disponibles</p>
       </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 border-l-4 border-red-500 rounded-r-xl flex justify-between items-center">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-900 font-bold text-lg">
-            ×
-          </button>
+          <span className="flex items-center gap-2"><AlertCircle className="w-5 h-5" />{error}</span>
+          <button onClick={() => setError(null)}><X className="w-5 h-5" /></button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Étape 1 — Recherche */}
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        {/* ÉTAPE 1 — choix du TYPE */}
+        <div className="lg:col-span-2 space-y-4">
           <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs">
-            1. Rechercher un modèle
+            1. Type de contrat
           </label>
           <div className="relative">
+            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              className="w-full p-5 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-mizan-500 focus:ring-4 focus:ring-mizan-50 transition-all text-lg bg-white"
-              placeholder="Ex: bail, travail, vente..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                if (step !== "search") setStep("search");
-              }}
+              className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-mizan-500 focus:ring-4 focus:ring-mizan-50 transition-all bg-white"
+              placeholder="Ex: bail, travail, vente, شركة, كراء…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            {searchTerm && step === "search" && (
-              <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-64 overflow-y-auto">
-                {filtered.length > 0 ? (
-                  filtered.map((t, i) => (
-                    <div
-                      key={i}
-                      className="p-4 hover:bg-mizan-50 cursor-pointer border-b last:border-0 transition group"
-                      onClick={() => {
-                        setSelectedTemplate(t);
-                        setDetails({});
-                        setSearchTerm(t.title);
-                        setStep("form");
-                      }}
-                    >
-                      <div className="font-bold text-gray-800 group-hover:text-mizan-700">
-                        {t.title}
-                      </div>
-                      <div className="text-xs text-mizan-400">
-                        {t.fields?.length ?? 0} variable(s) à personnaliser
-                      </div>
-                      {t.category && (
-                        <div className="text-xs text-gray-400 mt-0.5">{t.category}</div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-gray-400 text-center italic text-sm">
-                    Aucun modèle trouvé
-                  </div>
-                )}
-              </div>
+          </div>
+
+          <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+            {filtered.length === 0 && (
+              <p className="text-gray-400 text-center italic text-sm py-6">Aucun type trouvé</p>
             )}
+            {filtered.map((t) => {
+              const isSel = selected?.name === t.name;
+              return (
+                <button
+                  key={t.name}
+                  onClick={() => chooseType(t)}
+                  className={`w-full text-right p-4 rounded-2xl border-2 transition group flex items-center justify-between gap-3
+                    ${isSel ? "border-mizan-500 bg-mizan-50" : "border-gray-100 hover:border-mizan-200 hover:bg-mizan-50/40 bg-white"}`}
+                >
+                  <ChevronRight className={`w-5 h-5 shrink-0 ${isSel ? "text-mizan-600" : "text-gray-300 group-hover:text-mizan-400"}`} />
+                  <div className="flex-1 font-ar" dir="rtl">
+                    <div className={`font-bold ${isSel ? "text-mizan-700" : "text-gray-800"}`}>{t.name}</div>
+                    <div className="text-xs text-mizan-400">
+                      {t.fields.length} champ(s) · {t.clauses.length} clause(s)
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Étape 2 — Formulaire dynamique */}
-        <div
-          className={`${
-            selectedTemplate ? "opacity-100" : "opacity-20 pointer-events-none"
-          } transition-all duration-500`}
-        >
-          <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs mb-6">
-            2. Remplir les données
-          </label>
-          <div className="space-y-5 bg-white p-8 border-2 border-gray-50 rounded-[32px] shadow-xl shadow-gray-100">
-            {/* ✅ Fix: si aucun champ, afficher message */}
-            {selectedTemplate?.fields?.length === 0 && (
-              <p className="text-sm text-gray-400 italic text-center py-4">
-                Ce modèle ne nécessite pas de variables.
-              </p>
-            )}
-            {selectedTemplate?.fields?.map((field) => (
-              <div key={field}>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">
-                  {field.replace(/_/g, " ")}
+        {/* ÉTAPE 2 — FORMULAIRE DYNAMIQUE */}
+        <div className="lg:col-span-3">
+          {!selected ? (
+            <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-3xl p-12 min-h-[400px]">
+              <FileText className="w-12 h-12 mb-3 text-gray-300" />
+              <p className="font-medium">Sélectionnez un type de contrat à gauche</p>
+              <p className="text-sm">Le formulaire adapté s'affichera ici.</p>
+            </div>
+          ) : (
+            <div className="bg-white p-8 border-2 border-gray-50 rounded-[32px] shadow-xl shadow-gray-100 space-y-8">
+              <div>
+                <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs mb-1">
+                  2. Remplir les données
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-mizan-100 outline-none transition-all text-sm"
-                  placeholder={`Saisir ${field.replace(/_/g, " ")}...`}
-                  value={details[field] || ""}
-                  onChange={(e) =>
-                    setDetails({ ...details, [field]: e.target.value })
-                  }
-                />
+                <h2 className="text-xl font-bold text-ink font-ar" dir="rtl">{selected.name}</h2>
               </div>
-            ))}
 
-            <button
-              onClick={handleGenerate}
-              disabled={!selectedTemplate}
-              className="w-full py-5 bg-mizan-600 hover:bg-mizan-700 text-white font-black rounded-2xl mt-6 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:bg-gray-200"
-            >
-              GÉNÉRER LE CONTRAT
-            </button>
+              {/* ⭐ Champs obligatoires */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-2 text-gold-600 font-bold text-sm">
+                  <Star className="w-4 h-4 fill-gold-500 text-gold-500" />
+                  الحقول الإجبارية — Champs obligatoires
+                </div>
+                {requiredFields.map((f) => (
+                  <FieldInput key={f.name} field={f} value={details[f.name] || ""}
+                    error={fieldErrors[f.name]} onChange={(v) => setField(f, v)} />
+                ))}
+              </div>
 
-            {selectedTemplate && (
-              <button
-                onClick={reset}
-                className="w-full text-xs text-gray-400 font-bold py-2 hover:text-red-400 transition"
-              >
-                Annuler et changer de modèle
-              </button>
-            )}
-          </div>
+              {/* 📋 Champs optionnels */}
+              {optionalFields.length > 0 && (
+                <div className="space-y-5 pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-gray-500 font-bold text-sm">
+                    <ListChecks className="w-4 h-4" />
+                    الحقول الاختيارية — Champs optionnels
+                  </div>
+                  {optionalFields.map((f) => (
+                    <FieldInput key={f.name} field={f} value={details[f.name] || ""}
+                      error={fieldErrors[f.name]} onChange={(v) => setField(f, v)} />
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-3 pt-2">
+                <button onClick={handleGenerate}
+                  className="w-full py-5 bg-mizan-600 hover:bg-mizan-700 text-white font-black rounded-2xl shadow-xl shadow-mizan-100 transition-all active:scale-95">
+                  GÉNÉRER LE CONTRAT
+                </button>
+                <button onClick={reset}
+                  className="w-full text-xs text-gray-400 font-bold py-2 hover:text-red-400 transition">
+                  Annuler et changer de type
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Champ de formulaire : text / number / date, avec label arabe (RTL) ──── */
+function FieldInput({
+  field, value, error, onChange,
+}: {
+  field: ContractField;
+  value: string;
+  error?: string;
+  onChange: (v: string) => void;
+}) {
+  const base =
+    "w-full p-4 bg-gray-50 border rounded-xl focus:bg-white focus:ring-2 focus:ring-mizan-100 outline-none transition-all text-sm " +
+    (error ? "border-red-300 ring-2 ring-red-100" : "border-gray-100");
+
+  return (
+    <div>
+      <label className="block text-sm font-bold text-gray-700 mb-2 font-ar" dir="rtl">
+        {field.label}
+        {field.required && <span className="text-red-500"> *</span>}
+      </label>
+
+      {field.type === "date" ? (
+        <input type="date" className={base} value={toInputDate(value)}
+          onChange={(e) => onChange(e.target.value)} />
+      ) : field.type === "number" ? (
+        <input type="text" inputMode="numeric" dir="rtl" className={base} value={value}
+          placeholder="0" onChange={(e) => onChange(e.target.value)} />
+      ) : (
+        <input type="text" dir="rtl" className={base} value={value}
+          placeholder={field.label} onChange={(e) => onChange(e.target.value)} />
+      )}
+
+      {error && <p className="text-xs text-red-500 mt-1" dir="rtl">{error}</p>}
     </div>
   );
 }

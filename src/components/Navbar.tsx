@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../i18n/LanguageContext";
 import LanguageToggle from "./LanguageToggle";
 
-export default function Navbar() {
+export default function Navbar({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useAuth();
   const { t } = useLang();
 
@@ -12,7 +12,7 @@ export default function Navbar() {
   const initials = name.split(" ").map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <header className="fixed top-0 end-0 start-64 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-8">
+    <header className={`fixed top-0 end-0 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-8 transition-[inset-inline-start] duration-300 ${collapsed ? "start-20" : "start-64"}`}>
       <div className="max-w-xl flex-1">
         <div className="group relative">
           <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-mizan-600" />

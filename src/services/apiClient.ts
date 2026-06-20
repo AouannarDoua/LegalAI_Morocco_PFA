@@ -47,6 +47,7 @@ const PUBLIC_ROUTES = [
   "auth/confirm-email",
   "auth/resend-confirmation",
   "contracts/templates",   // ✅ Fix: templates est public
+  "contracts/types",       // ✅ types (formulaire dynamique) est public
 ];
 
 function isPublicRoute(endpoint: string): boolean {

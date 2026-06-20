@@ -103,6 +103,22 @@ def generate_contract():
         return error_response(f"Erreur lors de la génération : {str(e)}", 500)
 
 
+# ─── GET /contracts/types — ✅ PUBLIC : 20 types + champs structurés ──────────
+# Renvoie pour CHAQUE type : son nom (arabe), la liste de ses champs
+# (name / label arabe / type text|number|date / required / default) et ses
+# clauses. C'est ce qui permet au frontend d'afficher un FORMULAIRE DYNAMIQUE
+# par type de contrat, exactement comme display_form_by_contract_type() du
+# script v12 (test.py).
+
+@contracts_bp.get("/types")
+def list_contract_types():
+    try:
+        return success_response(contract_service.list_types())
+    except Exception as e:
+        print(f"[list_contract_types] Error: {e}")
+        return error_response(str(e), 500)
+
+
 # ─── GET /contracts/templates — ✅ PUBLIC (pas de jwt_required) ───────────────
 
 @contracts_bp.get("/templates")
@@ -113,6 +129,24 @@ def list_templates():
     except Exception as e:
         print(f"[list_templates] Error: {e}")
         return error_response(str(e), 500)
+
+
+# ─── POST /contracts/<id>/rerender — régénère le PDF depuis le texte édité ────
+# Permet à l'avocat de corriger le contrat (supprimer une phrase, corriger un
+# nom) puis de reconstruire le PDF, SANS rappeler l'IA.
+
+@contracts_bp.post("/<int:contract_id>/rerender")
+@jwt_required()
+def rerender_contract(contract_id):
+    user_id = get_jwt_identity()
+    data    = request.get_json() or {}
+    content = data.get("content", "")
+    title   = data.get("title")
+
+    contract, err = contract_service.re_render(user_id, contract_id, content, title)
+    if err:
+        return error_response(err, 400)
+    return success_response(contract.to_dict(), "PDF mis à jour")
 
 
 # ─── GET /contracts/download/<filename> ──────────────────────────────────────

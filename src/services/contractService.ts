@@ -35,6 +35,22 @@ export interface GenerateContractPayload {
   details:       Record<string, unknown>;
 }
 
+// ─── Types pour le FORMULAIRE DYNAMIQUE par type de contrat (logique v12) ────
+
+export interface ContractField {
+  name:      string;                       // ex: "nom_mocri"
+  label:     string;                       // libellé arabe ex: "الإسم الكامل للمكري"
+  type:      "text" | "number" | "date";   // type de saisie
+  required:  boolean;                       // champ obligatoire ?
+  default?:  string;                        // valeur par défaut éventuelle
+}
+
+export interface ContractTypeInfo {
+  name:    string;            // nom arabe du type (clé), ex: "عقد كراء سكني"
+  fields:  ContractField[];   // champs du formulaire
+  clauses: string[];          // clauses incluses dans le contrat généré
+}
+
 // ─── Contract Service ────────────────────────────────────────────────────────
 
 export const contractService = {
@@ -52,6 +68,14 @@ export const contractService = {
 
   generate: (payload: GenerateContractPayload): Promise<Contract> =>
     api.post<Contract>("contracts/generate", payload),
+
+  // ✅ Liste des 20 types avec leurs champs structurés (formulaire dynamique)
+  types: (): Promise<ContractTypeInfo[]> =>
+    api.get<ContractTypeInfo[]>("contracts/types"),
+
+  // ✅ Régénère le PDF depuis un texte édité par l'avocat (sans IA)
+  rerender: (id: number, content: string, title?: string): Promise<Contract> =>
+    api.post<Contract>(`contracts/${id}/rerender`, { content, title }),
 };
 
 export default contractService;
