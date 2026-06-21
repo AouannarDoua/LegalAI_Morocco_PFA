@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { articleService, type Article } from "../services/index";
+import { useLang } from "../i18n/LanguageContext";
 
 const CATEGORIES = [
   "Droit des affaires",
@@ -12,6 +13,12 @@ const CATEGORIES = [
 ];
 
 export default function Articles() {
+  const { t, lang } = useLang();
+  const catLabel = (c?: string | null) => {
+    if (!c) return "";
+    const v = t("artsCatMap." + c);
+    return v.includes("artsCatMap.") ? c : v;
+  };
   const [page, setPage]         = useState(1);
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [selected, setSelected] = useState<Article | null>(null);
@@ -31,7 +38,7 @@ export default function Articles() {
           onClick={() => setSelected(null)}
           className="text-sm text-mizan-600 hover:underline mb-4 inline-block"
         >
-          ← Retour aux articles
+          {t("arts.back")}
         </button>
         <h1 className="text-xl font-bold text-gray-900 mb-3">{selected.title}</h1>
         <div className="flex gap-2 text-xs mb-6">
@@ -46,14 +53,14 @@ export default function Articles() {
             </span>
           )}
           <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
-            {new Date(selected.created_at).toLocaleDateString("fr-MA", {
+            {new Date(selected.created_at).toLocaleDateString(lang === "ar" ? "ar-MA" : "fr-FR", {
               day: "numeric", month: "long", year: "numeric",
             })}
           </span>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <p className="text-sm text-gray-500 italic">
-            Le contenu détaillé de cet article sera chargé depuis l'API.
+            {t("arts.detailSoon")}
           </p>
         </div>
       </div>
@@ -64,9 +71,9 @@ export default function Articles() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Articles juridiques</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("arts.title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Guides pratiques et analyses du droit marocain
+          {t("arts.subtitle")}
         </p>
       </div>
 
@@ -80,7 +87,7 @@ export default function Articles() {
               : "border-gray-300 text-gray-600 hover:bg-gray-50"
           }`}
         >
-          Tous
+          {t("arts.all")}
         </button>
         {CATEGORIES.map((cat) => (
           <button
@@ -117,7 +124,7 @@ export default function Articles() {
       {!isLoading && articles.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">📰</div>
-          <p className="font-medium text-gray-600">Aucun article disponible</p>
+          <p className="font-medium text-gray-600">{t("arts.empty")}</p>
         </div>
       )}
 
@@ -136,14 +143,14 @@ export default function Articles() {
                 </span>
               )}
               <span className="text-xs text-gray-400 flex-shrink-0">
-                {new Date(article.created_at).toLocaleDateString("fr-MA")}
+                {new Date(article.created_at).toLocaleDateString(lang === "ar" ? "ar-MA" : "fr-FR")}
               </span>
             </div>
             <h2 className="font-semibold text-gray-900 text-sm leading-snug mb-2">
               {article.title}
             </h2>
             {article.author && (
-              <p className="text-xs text-gray-500">par {article.author}</p>
+              <p className="text-xs text-gray-500">{t("arts.by")} {article.author}</p>
             )}
           </button>
         ))}
@@ -157,7 +164,7 @@ export default function Articles() {
             disabled={!data.has_prev}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
           >
-            ← Précédent
+            {t("common.prev")}
           </button>
           <span className="px-4 py-2 text-sm text-gray-500">
             {data.page} / {data.pages}
@@ -167,7 +174,7 @@ export default function Articles() {
             disabled={!data.has_next}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
           >
-            Suivant →
+            {t("common.next")}
           </button>
         </div>
       )}

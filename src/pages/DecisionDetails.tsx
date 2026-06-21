@@ -1,8 +1,15 @@
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { decisionService } from "../services/index";
+import { useLang } from "../i18n/LanguageContext";
 
 export default function DecisionDetails() {
+  const { t, lang } = useLang();
+  const catLabel = (c?: string | null) => {
+    if (!c) return "";
+    const v = t("dec.catMap." + c);
+    return v.includes("dec.catMap.") ? c : v;
+  };
   const { id } = useParams<{ id: string }>();
 
   const { data: decision, isLoading, error } = useApi(
@@ -24,10 +31,10 @@ export default function DecisionDetails() {
     return (
       <div className="p-6 max-w-3xl mx-auto">
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-          {error ?? "Décision introuvable"}
+          {error ?? t("decd.notFound")}
         </div>
         <Link to="/decisions" className="mt-4 inline-block text-sm text-mizan-600 hover:underline">
-          ← Retour aux décisions
+          {t("decd.back")}
         </Link>
       </div>
     );
@@ -37,7 +44,7 @@ export default function DecisionDetails() {
     <div className="p-6 max-w-3xl mx-auto">
       {/* Breadcrumb */}
       <Link to="/decisions" className="text-sm text-mizan-600 hover:underline mb-4 inline-block">
-        ← Retour aux décisions
+        {t("decd.back")}
       </Link>
 
       {/* Header */}
@@ -54,14 +61,14 @@ export default function DecisionDetails() {
         )}
         {decision.date && (
           <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-            📅 {new Date(decision.date).toLocaleDateString("fr-MA", {
+            📅 {new Date(decision.date).toLocaleDateString(lang === "ar" ? "ar-MA" : "fr-FR", {
               day: "numeric", month: "long", year: "numeric",
             })}
           </span>
         )}
         {decision.category && (
           <span className="bg-mizan-50 text-mizan-700 px-3 py-1 rounded-full">
-            {decision.category}
+            {catLabel(decision.category)}
           </span>
         )}
       </div>
@@ -69,16 +76,16 @@ export default function DecisionDetails() {
       {/* Résumé */}
       {decision.summary && (
         <div className="bg-mizan-50 border border-mizan-100 rounded-xl p-5 mb-6">
-          <h2 className="text-sm font-semibold text-mizan-900 mb-2">Résumé</h2>
+          <h2 className="text-sm font-semibold text-mizan-900 mb-2">{t("decd.summary")}</h2>
           <p className="text-sm text-mizan-800 leading-relaxed">{decision.summary}</p>
         </div>
       )}
 
       {/* Texte complet — à ajouter via l'endpoint /decisions/:id quand disponible */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-gray-800 mb-3">Texte intégral</h2>
+        <h2 className="text-sm font-semibold text-gray-800 mb-3">{t("decd.fullText")}</h2>
         <p className="text-sm text-gray-500 italic">
-          Le texte intégral de cette décision sera disponible prochainement.
+          {t("decd.fullTextSoon")}
         </p>
       </div>
     </div>

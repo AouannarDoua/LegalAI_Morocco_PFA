@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApi, useMutation } from "../hooks/useApi";
 import { notificationService, type Notification } from "../services/index";
+import { useLang } from "../i18n/LanguageContext";
 
 const TYPE_STYLE: Record<string, string> = {
   info:    "bg-mizan-50 border-mizan-200 text-mizan-800",
@@ -14,6 +15,7 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 export default function Notifications() {
+  const { t, lang } = useLang();
   const [showUnread, setShowUnread] = useState(false);
 
   const { data, isLoading, error, refetch } = useApi(
@@ -31,10 +33,10 @@ export default function Notifications() {
     <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("notif.title")}</h1>
           {unreadCount > 0 && (
             <p className="text-sm text-gray-500 mt-0.5">
-              {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
+              {unreadCount} {unreadCount > 1 ? t("notif.unreadOther") : t("notif.unreadOne")}
             </p>
           )}
         </div>
@@ -47,14 +49,14 @@ export default function Notifications() {
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
-            Non lues seulement
+            {t("notif.unreadOnly")}
           </button>
           {unreadCount > 0 && (
             <button
               onClick={() => markAllRead()}
               className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
             >
-              Tout marquer lu
+              {t("notif.markAllRead")}
             </button>
           )}
         </div>
@@ -77,7 +79,7 @@ export default function Notifications() {
       {!isLoading && notifications.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">🔔</div>
-          <p>Aucune notification{showUnread ? " non lue" : ""}</p>
+          <p>{showUnread ? t("notif.emptyUnread") : t("notif.empty")}</p>
         </div>
       )}
 
@@ -100,7 +102,7 @@ export default function Notifications() {
                     <p className="text-sm opacity-80 mt-0.5">{notif.message}</p>
                   )}
                   <p className="text-xs opacity-60 mt-1">
-                    {new Date(notif.created_at).toLocaleDateString("fr-MA", {
+                    {new Date(notif.created_at).toLocaleDateString(lang === "ar" ? "ar-MA" : "fr-FR", {
                       day: "numeric", month: "long", year: "numeric",
                     })}
                   </p>
@@ -111,7 +113,7 @@ export default function Notifications() {
                   onClick={() => markRead(notif.id)}
                   className="text-xs text-mizan-600 hover:underline flex-shrink-0"
                 >
-                  Marquer lu
+                  {t("notif.markRead")}
                 </button>
               )}
             </div>

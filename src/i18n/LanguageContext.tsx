@@ -9,6 +9,8 @@ import {
 import { translations, type Lang } from "./translations";
 import { extra } from "./extra";
 import { extra2 } from "./extra2";
+import { extra3 } from "./extra3";
+import { extra4 } from "./extra4";
 
 interface LanguageContextValue {
   lang: Lang;
@@ -21,9 +23,34 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 const STORAGE_KEY = "mizan.lang.v3";
 
+// Fusion PROFONDE : plusieurs fichiers définissent le même espace de noms
+// (ex. `common` existe dans translations.ts ET dans extra3.ts). Un simple
+// spread {...a, ...b} écraserait tout l'objet `common` au lieu de fusionner
+// ses clés — c'est ce qui faisait disparaître common.login / common.langName.
+function isObject(v: any): boolean {
+  return v != null && typeof v === "object" && !Array.isArray(v);
+}
+function deepMerge(target: any, source: any): any {
+  const out: any = { ...target };
+  for (const key of Object.keys(source)) {
+    if (isObject(out[key]) && isObject(source[key])) {
+      out[key] = deepMerge(out[key], source[key]);
+    } else {
+      out[key] = source[key];
+    }
+  }
+  return out;
+}
+function buildDict(lang: Lang): any {
+  return [translations, extra, extra2, extra3, extra4].reduce(
+    (acc, mod) => deepMerge(acc, (mod as any)[lang] ?? {}),
+    {} as any
+  );
+}
+
 const dict: Record<Lang, any> = {
-  fr: { ...(translations.fr as any), ...(extra.fr as any), ...(extra2.fr as any) },
-  ar: { ...(translations.ar as any), ...(extra.ar as any), ...(extra2.ar as any) },
+  fr: buildDict("fr"),
+  ar: buildDict("ar"),
 };
 
 function resolve(obj: any, path: string): any {

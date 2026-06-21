@@ -5,6 +5,7 @@ import contractService, {
   type ContractField,
 } from "../services/contractService";
 import { BASE_URL, tokenStorage, ApiError } from "../services/apiClient";
+import { useLang } from "../i18n/LanguageContext";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * ContractGenerator — FORMULAIRE DYNAMIQUE PAR TYPE DE CONTRAT
@@ -73,6 +74,7 @@ const SEARCH_ALIASES: Record<string, string[]> = {
 };
 
 export default function ContractGenerator() {
+  const { t } = useLang();
   const [types,    setTypes]    = useState<ContractTypeInfo[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [step,     setStep]     = useState<Step>("search");
@@ -104,7 +106,7 @@ export default function ContractGenerator() {
       .catch((err) => {
         if (!alive) return;
         console.error("Erreur chargement des types:", err);
-        setError("Impossible de charger les types de contrats.");
+        setError(t("gen.loadError"));
         setLoading(false);
       });
     return () => { alive = false; };
@@ -157,12 +159,12 @@ export default function ContractGenerator() {
     const errs: Record<string, string> = {};
     requiredFields.forEach((f) => {
       const v = (details[f.name] || "").trim();
-      if (!v) errs[f.name] = "هذا الحقل إجباري — champ obligatoire";
+      if (!v) errs[f.name] = t("gen.requiredField");
     });
     const debut = parseDdmmyyyy(details["date_debut"]);
     const fin   = parseDdmmyyyy(details["date_fin"]);
     if (debut && fin && debut > fin) {
-      errs["date_fin"] = "تاريخ البداية بعد تاريخ النهاية — date début après date fin";
+      errs["date_fin"] = t("gen.dateError");
     }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
@@ -172,7 +174,7 @@ export default function ContractGenerator() {
     if (!selected) return;
     setError(null);
     if (!validate()) {
-      setError("Veuillez corriger les champs en rouge avant de générer.");
+      setError(t("gen.fixFields"));
       return;
     }
     setStep("generating");
@@ -189,7 +191,7 @@ export default function ContractGenerator() {
       await loadPdf(fileName);
       setStep("result");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erreur lors de la génération du contrat");
+      setError(err instanceof ApiError ? err.message : t("gen.genError"));
       setStep("form");
     }
   }
@@ -211,7 +213,7 @@ export default function ContractGenerator() {
   async function handleSaveEdit() {
     if (!generated?.id) return;
     if (editedText.trim().length < 30) {
-      setError("Le texte est trop court.");
+      setError(t("gen.tooShort"));
       return;
     }
     setSaving(true);
@@ -224,7 +226,7 @@ export default function ContractGenerator() {
       await loadPdf(fileName);
       setEditing(false);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Échec de l'enregistrement des modifications");
+      setError(err instanceof ApiError ? err.message : t("gen.saveError"));
     } finally {
       setSaving(false);
     }
@@ -249,7 +251,7 @@ export default function ContractGenerator() {
     return (
       <div className="flex flex-col justify-center items-center h-96 gap-4">
         <Loader2 className="w-12 h-12 text-mizan-600 animate-spin" />
-        <p className="text-gray-500 animate-pulse">Chargement des types de contrats…</p>
+        <p className="text-gray-500 animate-pulse">{t("gen.loading")}</p>
       </div>
     );
   }
@@ -262,8 +264,8 @@ export default function ContractGenerator() {
           <div className="w-20 h-20 border-4 border-mizan-100 rounded-full" />
           <div className="w-20 h-20 border-4 border-mizan-600 border-t-transparent rounded-full animate-spin absolute top-0" />
         </div>
-        <p className="text-xl font-bold text-gray-800">Génération du contrat en cours…</p>
-        <p className="text-sm text-gray-400">Recherche juridique (RAG) + rédaction en arabe</p>
+        <p className="text-xl font-bold text-gray-800">{t("gen.generating")}</p>
+        <p className="text-sm text-gray-400">{t("gen.generatingSub")}</p>
       </div>
     );
   }
@@ -276,23 +278,23 @@ export default function ContractGenerator() {
           <div>
             <h1 className="text-2xl font-bold text-mizan-900 font-ar" dir="rtl">{selected?.name}</h1>
             <p className="text-sm text-gray-500">
-              {editing ? "Mode édition — corrigez le texte puis enregistrez" : "Document généré avec succès"}
+              {editing ? t("gen.editMode") : t("gen.success")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             {!editing && (
               <button onClick={() => { setEditedText((generated as any)?.content || editedText); setEditing(true); }}
                 className="flex items-center gap-2 px-5 py-2 bg-gold-100 text-gold-700 hover:bg-gold-200 rounded-xl transition font-bold">
-                <Pencil className="w-4 h-4" /> Modifier le texte
+                <Pencil className="w-4 h-4" /> {t("gen.editText")}
               </button>
             )}
             <button onClick={() => setStep("form")}
               className="px-5 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition font-medium">
-              Modifier les données
+              {t("gen.editData")}
             </button>
             <button onClick={reset}
               className="px-5 py-2 bg-mizan-600 text-white rounded-xl font-bold hover:bg-mizan-700 transition shadow-lg">
-              Nouveau contrat
+              {t("gen.newContract")}
             </button>
           </div>
         </div>
@@ -318,9 +320,9 @@ export default function ContractGenerator() {
             ) : pdfUrl ? (
               <iframe
                 src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                width="100%" height="100%" title="Contrat PDF" className="border-none" />
+                width="100%" height="100%" title={t("genx.pdfTitle")} className="border-none" />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">Préparation de l'aperçu…</div>
+              <div className="flex items-center justify-center h-full text-gray-400">{t("genx.previewPrep")}</div>
             )}
           </div>
 
@@ -328,32 +330,31 @@ export default function ContractGenerator() {
             {editing ? (
               <div className="bg-gold-50 p-6 rounded-3xl border border-gold-200 shadow-sm">
                 <Pencil className="w-8 h-8 text-gold-600 mb-2" />
-                <h3 className="font-bold text-gold-700 mb-2">Édition du contrat</h3>
+                <h3 className="font-bold text-gold-700 mb-2">{t("gen.editTitle")}</h3>
                 <p className="text-sm text-gray-600 mb-6">
-                  Corrigez un nom, supprimez ou reformulez une phrase, puis enregistrez :
-                  le PDF est régénéré avec la même mise en page (logo, articles, signatures).
+                  {t("gen.editHelp")}
                 </p>
                 <button onClick={handleSaveEdit} disabled={saving}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-mizan-600 text-white rounded-2xl font-bold shadow-lg hover:bg-mizan-700 transition disabled:opacity-60">
                   {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  {saving ? "Enregistrement…" : "Enregistrer et régénérer le PDF"}
+                  {saving ? t("gen.saving") : t("gen.save")}
                 </button>
                 <button onClick={() => { setEditing(false); setError(null); setEditedText((generated as any)?.content || ""); }}
                   disabled={saving}
                   className="w-full mt-2 py-2 text-sm text-gray-500 font-bold hover:text-red-400 transition">
-                  Annuler les modifications
+                  {t("gen.cancelEdit")}
                 </button>
               </div>
             ) : (
               <div className="bg-mizan-50 p-6 rounded-3xl border border-mizan-100 shadow-sm">
                 <FileText className="w-8 h-8 text-mizan-600 mb-2" />
-                <h3 className="font-bold text-mizan-900 mb-2">Document prêt !</h3>
+                <h3 className="font-bold text-mizan-900 mb-2">{t("gen.ready")}</h3>
                 <p className="text-sm text-mizan-700 mb-6">
-                  Vérifiez le contrat. Une erreur ? Cliquez « Modifier le texte » pour corriger avant de télécharger.
+                  {t("gen.readyHelp")}
                 </p>
                 <a href={pdfUrl || "#"} download={downloadName} target="_blank" rel="noreferrer"
                   className="flex items-center justify-center gap-2 w-full text-center py-4 bg-mizan-600 text-white rounded-2xl font-bold shadow-lg hover:bg-mizan-700 transition hover:-translate-y-1">
-                  <Download className="w-5 h-5" /> Télécharger le PDF
+                  <Download className="w-5 h-5" /> {t("gen.download")}
                 </a>
               </div>
             )}
@@ -361,7 +362,7 @@ export default function ContractGenerator() {
             {!editing && selected && selected.clauses.length > 0 && (
               <div className="bg-mizan-50 p-6 rounded-3xl border border-mizan-100">
                 <h3 className="font-bold text-mizan-900 mb-3 flex items-center gap-2">
-                  <ListChecks className="w-5 h-5" /> {selected.clauses.length} clauses incluses
+                  <ListChecks className="w-5 h-5" /> {selected.clauses.length} {t("gen.clausesIncluded")}
                 </h3>
                 <ul className="space-y-1 text-sm text-mizan-800 font-ar" dir="rtl">
                   {selected.clauses.map((c, i) => <li key={i}>• {c}</li>)}
@@ -378,9 +379,9 @@ export default function ContractGenerator() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">LegalAI Generator</h1>
-        <p className="text-gray-500 text-lg">Choisissez un type de contrat, remplissez le formulaire, générez le PDF.</p>
-        <p className="text-xs text-gray-400 mt-1">{types.length} types de contrats disponibles</p>
+        <h1 className="text-4xl font-black mb-2 text-gray-900 tracking-tight">{t("gen.title")}</h1>
+        <p className="text-gray-500 text-lg">{t("gen.subtitle")}</p>
+        <p className="text-xs text-gray-400 mt-1">{types.length} {t("gen.available")}</p>
       </div>
 
       {error && (
@@ -394,14 +395,14 @@ export default function ContractGenerator() {
         {/* ÉTAPE 1 — choix du TYPE */}
         <div className="lg:col-span-2 space-y-4">
           <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs">
-            1. Type de contrat
+            {t("gen.step1")}
           </label>
           <div className="relative">
             <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-2xl shadow-sm outline-none focus:border-mizan-500 focus:ring-4 focus:ring-mizan-50 transition-all bg-white"
-              placeholder="Ex: bail, travail, vente, شركة, كراء…"
+              placeholder={t("gen.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -409,22 +410,22 @@ export default function ContractGenerator() {
 
           <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
             {filtered.length === 0 && (
-              <p className="text-gray-400 text-center italic text-sm py-6">Aucun type trouvé</p>
+              <p className="text-gray-400 text-center italic text-sm py-6">{t("gen.noType")}</p>
             )}
-            {filtered.map((t) => {
-              const isSel = selected?.name === t.name;
+            {filtered.map((ct) => {
+              const isSel = selected?.name === ct.name;
               return (
                 <button
-                  key={t.name}
-                  onClick={() => chooseType(t)}
+                  key={ct.name}
+                  onClick={() => chooseType(ct)}
                   className={`w-full text-right p-4 rounded-2xl border-2 transition group flex items-center justify-between gap-3
                     ${isSel ? "border-mizan-500 bg-mizan-50" : "border-gray-100 hover:border-mizan-200 hover:bg-mizan-50/40 bg-white"}`}
                 >
                   <ChevronRight className={`w-5 h-5 shrink-0 ${isSel ? "text-mizan-600" : "text-gray-300 group-hover:text-mizan-400"}`} />
                   <div className="flex-1 font-ar" dir="rtl">
-                    <div className={`font-bold ${isSel ? "text-mizan-700" : "text-gray-800"}`}>{t.name}</div>
+                    <div className={`font-bold ${isSel ? "text-mizan-700" : "text-gray-800"}`}>{ct.name}</div>
                     <div className="text-xs text-mizan-400">
-                      {t.fields.length} champ(s) · {t.clauses.length} clause(s)
+                      {ct.fields.length} {t("gen.fields")} · {ct.clauses.length} {t("gen.clauses")}
                     </div>
                   </div>
                 </button>
@@ -438,14 +439,14 @@ export default function ContractGenerator() {
           {!selected ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-3xl p-12 min-h-[400px]">
               <FileText className="w-12 h-12 mb-3 text-gray-300" />
-              <p className="font-medium">Sélectionnez un type de contrat à gauche</p>
-              <p className="text-sm">Le formulaire adapté s'affichera ici.</p>
+              <p className="font-medium">{t("gen.selectLeft")}</p>
+              <p className="text-sm">{t("gen.formHere")}</p>
             </div>
           ) : (
             <div className="bg-white p-8 border-2 border-gray-50 rounded-[32px] shadow-xl shadow-gray-100 space-y-8">
               <div>
                 <label className="block font-black text-mizan-600 uppercase tracking-widest text-xs mb-1">
-                  2. Remplir les données
+                  {t("gen.step2")}
                 </label>
                 <h2 className="text-xl font-bold text-ink font-ar" dir="rtl">{selected.name}</h2>
               </div>
@@ -454,7 +455,7 @@ export default function ContractGenerator() {
               <div className="space-y-5">
                 <div className="flex items-center gap-2 text-gold-600 font-bold text-sm">
                   <Star className="w-4 h-4 fill-gold-500 text-gold-500" />
-                  الحقول الإجبارية — Champs obligatoires
+                  {t("gen.required")}
                 </div>
                 {requiredFields.map((f) => (
                   <FieldInput key={f.name} field={f} value={details[f.name] || ""}
@@ -467,7 +468,7 @@ export default function ContractGenerator() {
                 <div className="space-y-5 pt-2 border-t border-gray-100">
                   <div className="flex items-center gap-2 text-gray-500 font-bold text-sm">
                     <ListChecks className="w-4 h-4" />
-                    الحقول الاختيارية — Champs optionnels
+                    {t("gen.optional")}
                   </div>
                   {optionalFields.map((f) => (
                     <FieldInput key={f.name} field={f} value={details[f.name] || ""}
@@ -479,11 +480,11 @@ export default function ContractGenerator() {
               <div className="space-y-3 pt-2">
                 <button onClick={handleGenerate}
                   className="w-full py-5 bg-mizan-600 hover:bg-mizan-700 text-white font-black rounded-2xl shadow-xl shadow-mizan-100 transition-all active:scale-95">
-                  GÉNÉRER LE CONTRAT
+                  {t("gen.generate")}
                 </button>
                 <button onClick={reset}
                   className="w-full text-xs text-gray-400 font-bold py-2 hover:text-red-400 transition">
-                  Annuler et changer de type
+                  {t("gen.cancelType")}
                 </button>
               </div>
             </div>
