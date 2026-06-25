@@ -18,12 +18,15 @@ export const articleService = {
    * Récupère la liste des articles avec pagination et filtrage.
    * Articles.tsx utilise 'page' et 'category'.
    */
-  list: (page = 1, category?: string): Promise<PaginatedData<Article>> => {
+  list: (page = 1, category?: string, q?: string): Promise<PaginatedData<Article>> => {
     const params = new URLSearchParams({ page: String(page) });
     
     // Si une catégorie est sélectionnée (et n'est pas "Tous"), on l'ajoute aux params[cite: 1]
     if (category && category !== "Tous") {
       params.set("category", category);
+    }
+    if (q && q.trim()) {
+      params.set("q", q.trim());
     }
     
     return api.get<PaginatedData<Article>>(`articles?${params}`);
@@ -34,6 +37,12 @@ export const articleService = {
    */
   getById: (id: number): Promise<Article> =>
     api.get<Article>(`articles/${id}`),
+
+  /**
+   * Catégories réellement présentes en base (pour les filtres dynamiques).
+   */
+  categories: (): Promise<string[]> =>
+    api.get<string[]>(`articles/categories`),
 };
 
 export default articleService;

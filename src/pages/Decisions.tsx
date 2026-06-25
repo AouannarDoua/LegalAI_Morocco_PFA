@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { decisionService, type Decision } from "../services/index";
@@ -22,10 +22,18 @@ export default function Decisions() {
   };
   const [page, setPage]         = useState(1);
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [search, setSearch]     = useState("");
+  const [q, setQ]               = useState("");
+
+  // Debounce de la recherche (400 ms).
+  useEffect(() => {
+    const id = setTimeout(() => { setQ(search); setPage(1); }, 400);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const { data, isLoading, error } = useApi(
-    () => decisionService.list(page, category),
-    [page, category]
+    () => decisionService.list(page, category, q),
+    [page, category, q]
   );
 
   const decisions: Decision[] = data?.items ?? [];
@@ -37,6 +45,24 @@ export default function Decisions() {
         <p className="text-sm text-gray-500 mt-1">
           {t("dec.subtitle")}
         </p>
+      </div>
+
+      {/* Recherche */}
+      <div className="relative mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t("dec.searchPlaceholder")}
+          className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-mizan-300"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Filtres catégorie */}

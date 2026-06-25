@@ -8,6 +8,13 @@
 
 export const extra4 = {
   fr: {
+    // ── Articles / Lois (clés ajoutées, fusionnées avec extra3.arts) ─────────
+    arts: {
+      searchPlaceholder: "Rechercher un article ou une loi…",
+      searchInLaw: "Rechercher dans la loi (n° d'article ou mot-clé)…",
+      noArticleFound: "Aucun article trouvé",
+      articlesCount: "articles",
+    },
     // ── Notifications ───────────────────────────────────────────────────────
     notif: {
       title: "Notifications",
@@ -57,6 +64,7 @@ export const extra4 = {
       title: "Décisions judiciaires",
       subtitle: "Jurisprudence marocaine — tribunaux de première instance, cours d'appel, Cour de cassation",
       all: "Toutes",
+      searchPlaceholder: "Rechercher une décision (mots-clés, numéro…)…",
       empty: "Aucune décision trouvée",
       resetFilter: "Réinitialiser le filtre",
       catMap: {
@@ -76,6 +84,8 @@ export const extra4 = {
       summary: "Résumé",
       fullText: "Texte intégral",
       fullTextSoon: "Le texte intégral de cette décision sera disponible prochainement.",
+      searchInDoc: "Rechercher dans la décision…",
+      noMatch: "Aucun passage trouvé",
     },
 
     // ── Articles : table de correspondance des catégories ───────────────────
@@ -224,6 +234,14 @@ export const extra4 = {
   },
 
   ar: {
+    // ── المقالات : عناصر البحث ──────────────────────────────────────────────
+    arts: {
+      searchPlaceholder: "ابحث عن مقال أو قانون…",
+      searchInLaw:       "ابحث داخل القانون (رقم المادة أو كلمة)…",
+      noArticleFound:    "لم يتم العثور على أي مادة",
+      articlesCount:     "مادة",
+    },
+
     // ── الإشعارات ───────────────────────────────────────────────────────────
     notif: {
       title: "الإشعارات",
@@ -273,6 +291,7 @@ export const extra4 = {
       title: "الأحكام القضائية",
       subtitle: "الاجتهاد القضائي المغربي — المحاكم الابتدائية، محاكم الاستئناف، محكمة النقض",
       all: "الكل",
+      searchPlaceholder: "ابحث عن حكم (كلمات مفتاحية، رقم…)…",
       empty: "لم يُعثر على أي حكم",
       resetFilter: "إعادة ضبط التصفية",
       catMap: {
@@ -292,6 +311,8 @@ export const extra4 = {
       summary: "ملخّص",
       fullText: "النص الكامل",
       fullTextSoon: "سيكون النص الكامل لهذا الحكم متاحاً قريباً.",
+      searchInDoc: "ابحث داخل الحكم…",
+      noMatch: "لم يتم العثور على أي مقطع",
     },
 
     // ── المقالات : جدول تطابق التصنيفات ─────────────────────────────────────
