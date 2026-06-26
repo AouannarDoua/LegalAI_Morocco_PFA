@@ -46,9 +46,10 @@ interface BubbleProps {
 function MessageBubble({
   msg, isPlaying, isSpeakLoading, canSpeak, onSpeak, onTranslate, translation, isTranslating,
 }: BubbleProps) {
+  const { t } = useLang();
   const isUser = msg.role === "user";
   const shown = translation ?? msg.content;
-  const target = isArabic(msg.content) ? "français" : "العربية";
+  const target = isArabic(msg.content) ? t("chatx.langFr") : t("chatx.langAr");
 
   return (
     <div className={`mb-3 flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -71,7 +72,7 @@ function MessageBubble({
                     : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-mizan-600"}`}>
                 {isSpeakLoading ? <Loader2 className="h-3 w-3 animate-spin" />
                   : isPlaying ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                {isPlaying ? "Arrêter" : isSpeakLoading ? "…" : "Écouter"}
+                {isPlaying ? t("chatx.stop") : isSpeakLoading ? "…" : t("chatx.listen")}
               </button>
             )}
             <button onClick={() => onTranslate(msg.id, msg.content)} disabled={isTranslating}
@@ -79,7 +80,7 @@ function MessageBubble({
                 translation ? "border-emerald-300 bg-emerald-100 text-emerald-700"
                   : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-emerald-600"}`}>
               {isTranslating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-              {translation ? "Voir l'original" : `Traduire en ${target}`}
+              {translation ? t("chatx.seeOriginal") : `${t("chatx.translateTo")} ${target}`}
             </button>
           </div>
         )}
@@ -95,7 +96,7 @@ function MessageBubble({
 }
 
 export default function Chat() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [showHistory, setShowHistory] = useState(false);  // masqué par défaut, ouvrable via le bouton
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -114,7 +115,7 @@ export default function Chat() {
   useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
 
   const voice = useVoice({
-    defaultLang: "ar-MA",
+    defaultLang: lang === "ar" ? "ar-MA" : "fr-FR",
     onFinalTranscript: (text) => {
       const finalText = text.trim();
       if (!finalText) return;
@@ -122,6 +123,16 @@ export default function Chat() {
       if (handsFreeRef.current) setTimeout(() => sendMessage(finalText), 150);
     },
   });
+
+  // 🔄 La langue de l'assistant suit la langue de l'app PAR DÉFAUT.
+  // Quand on change la langue globale (FR/AR), le sélecteur du chat se met à
+  // jour automatiquement. L'utilisateur peut toujours le changer manuellement
+  // ensuite (override) — ce choix reste actif jusqu'au prochain changement de
+  // la langue de l'app.
+  const setVoiceLang = voice.setLang;
+  useEffect(() => {
+    setVoiceLang(lang === "ar" ? "ar-MA" : "fr-FR");
+  }, [lang, setVoiceLang]);
 
   useEffect(() => { if (!voice.speaking && !voice.speakLoading) setPlayingId(null); }, [voice.speaking, voice.speakLoading]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
@@ -155,7 +166,7 @@ export default function Chat() {
       if (handsFreeRef.current) { setPlayingId(res.ai_msg_id); voice.speak(res.message); }
       loadSessions();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erreur de connexion au serveur");
+      setError(err instanceof ApiError ? err.message : t("chatx.errConnect"));
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
       setIsLoading(false);
@@ -178,7 +189,7 @@ export default function Chat() {
     setError(null); setTranslations({}); setPlayingId(null);
     setSessionId(sid);
     try { setMessages(await chatService.getHistory(sid)); }
-    catch (err) { setError(err instanceof ApiError ? err.message : "Impossible de charger la conversation"); }
+    catch (err) { setError(err instanceof ApiError ? err.message : t("chatx.errLoadConv")); }
   };
 
   const handleSpeak = (id: number, text: string) => {
@@ -194,7 +205,7 @@ export default function Chat() {
       const res = await translationService.translate(text, target);
       setTranslations((prev) => ({ ...prev, [id]: res.translation }));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erreur de traduction");
+      setError(err instanceof ApiError ? err.message : t("chatx.errTranslate"));
     } finally { setTranslatingId(null); }
   };
 

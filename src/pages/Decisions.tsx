@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { decisionService, type Decision } from "../services/index";
+import { useLang } from "../i18n/LanguageContext";
 
 const CATEGORIES = [
   "Droit du travail",
@@ -13,12 +14,26 @@ const CATEGORIES = [
 ];
 
 export default function Decisions() {
+  const { t, lang } = useLang();
+  const catLabel = (c?: string | null) => {
+    if (!c) return "";
+    const v = t("dec.catMap." + c);
+    return v.includes("dec.catMap.") ? c : v;
+  };
   const [page, setPage]         = useState(1);
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [search, setSearch]     = useState("");
+  const [q, setQ]               = useState("");
+
+  // Debounce de la recherche (400 ms).
+  useEffect(() => {
+    const id = setTimeout(() => { setQ(search); setPage(1); }, 400);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const { data, isLoading, error } = useApi(
-    () => decisionService.list(page, category),
-    [page, category]
+    () => decisionService.list(page, category, q),
+    [page, category, q]
   );
 
   const decisions: Decision[] = data?.items ?? [];
@@ -26,10 +41,28 @@ export default function Decisions() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Décisions judiciaires</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("dec.title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Jurisprudence marocaine — tribunaux de première instance, cours d'appel, Cour de cassation
+          {t("dec.subtitle")}
         </p>
+      </div>
+
+      {/* Recherche */}
+      <div className="relative mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t("dec.searchPlaceholder")}
+          className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-mizan-300"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Filtres catégorie */}
@@ -42,7 +75,7 @@ export default function Decisions() {
               : "border-gray-300 text-gray-600 hover:bg-gray-50"
           }`}
         >
-          Toutes
+          {t("dec.all")}
         </button>
         {CATEGORIES.map((cat) => (
           <button
@@ -54,7 +87,7 @@ export default function Decisions() {
                 : "border-gray-300 text-gray-600 hover:bg-gray-50"
             }`}
           >
-            {cat}
+            {catLabel(cat)}
           </button>
         ))}
       </div>
@@ -79,13 +112,13 @@ export default function Decisions() {
       {!isLoading && decisions.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">⚖️</div>
-          <p className="font-medium text-gray-600">Aucune décision trouvée</p>
+          <p className="font-medium text-gray-600">{t("dec.empty")}</p>
           {category && (
             <button
               onClick={() => setCategory(undefined)}
               className="mt-2 text-sm text-mizan-600 hover:underline"
             >
-              Réinitialiser le filtre
+              {t("dec.resetFilter")}
             </button>
           )}
         </div>
@@ -112,12 +145,12 @@ export default function Decisions() {
                   )}
                   {decision.date && (
                     <span className="bg-gray-100 px-2 py-0.5 rounded-full">
-                      📅 {new Date(decision.date).toLocaleDateString("fr-MA")}
+                      📅 {new Date(decision.date).toLocaleDateString(lang === "ar" ? "ar-MA" : "fr-FR")}
                     </span>
                   )}
                   {decision.category && (
                     <span className="bg-mizan-50 text-mizan-700 px-2 py-0.5 rounded-full">
-                      {decision.category}
+                      {catLabel(decision.category)}
                     </span>
                   )}
                 </div>
@@ -141,7 +174,7 @@ export default function Decisions() {
             disabled={!data.has_prev}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
           >
-            ← Précédent
+            {t("common.prev")}
           </button>
           <span className="px-4 py-2 text-sm text-gray-500">
             {data.page} / {data.pages}
@@ -151,7 +184,7 @@ export default function Decisions() {
             disabled={!data.has_next}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition"
           >
-            Suivant →
+            {t("common.next")}
           </button>
         </div>
       )}

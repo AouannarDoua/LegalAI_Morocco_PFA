@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Calculator, TrendingUp, Building2, Receipt, Users, Info, Printer, Calendar, Lightbulb } from "lucide-react";
 import { api, ApiError } from "../services/apiClient";
+import { useLang } from "../i18n/LanguageContext";
 
 type Mode = "simulateur" | "projection";
 
@@ -31,6 +32,11 @@ const SECTEURS = ["Commerce", "Industrie", "Services", "BTP / Construction", "Ag
 const fmt = (n: number) => new Intl.NumberFormat("fr-MA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + " DH";
 
 export default function TaxSimulator() {
+  const { t } = useLang();
+  const sectorLabel = (s: string) => {
+    const v = t("tax.sectorMap." + s);
+    return v.includes("tax.sectorMap.") ? s : v;
+  };
   const [mode, setMode] = useState<Mode>("simulateur");
 
   const [years, setYears] = useState<number[]>([2026]);
@@ -95,7 +101,7 @@ export default function TaxSimulator() {
         setProj(data);
       }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erreur lors du calcul");
+      setError(e instanceof ApiError ? e.message : t("tax.errCompute"));
     } finally {
       setLoading(false);
     }
@@ -113,14 +119,14 @@ export default function TaxSimulator() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center gap-3 mb-1">
         <Calculator className="w-7 h-7 text-mizan-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Simulateur fiscal marocain</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("tax.title")}</h1>
       </div>
-      <p className="text-gray-500 mb-5">Calcul de l'IS, TVA, CNSS et IR — ou projection prévisionnelle de fin d'année.</p>
+      <p className="text-gray-500 mb-5">{t("tax.subtitle")}</p>
 
       {/* Bascule de mode */}
       <div className="flex gap-2 mb-5">
-        {tabBtn("simulateur", <Calculator className="w-4 h-4" />, "Simulateur")}
-        {tabBtn("projection", <TrendingUp className="w-4 h-4" />, "Projection")}
+        {tabBtn("simulateur", <Calculator className="w-4 h-4" />, t("tax.tabSim"))}
+        {tabBtn("projection", <TrendingUp className="w-4 h-4" />, t("tax.tabProj"))}
       </div>
 
       {/* Formulaire */}
@@ -128,17 +134,17 @@ export default function TaxSimulator() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Commun */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Année (barème)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.year")}</label>
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Secteur d'activité</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.sector")}</label>
             <select value={secteur} onChange={(e) => setSecteur(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
-              {SECTEURS.map((s) => <option key={s} value={s}>{s}</option>)}
+              {SECTEURS.map((s) => <option key={s} value={s}>{sectorLabel(s)}</option>)}
             </select>
           </div>
 
@@ -146,12 +152,12 @@ export default function TaxSimulator() {
           {mode === "simulateur" ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Chiffre d'affaires annuel (DH)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.caAnnual")}</label>
                 <input type="number" min="0" value={ca} onChange={(e) => setCa(e.target.value)} placeholder="ex : 2 000 000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bénéfice net fiscal annuel (DH)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.profitAnnual")}</label>
                 <input type="number" min="0" value={benefice} onChange={(e) => setBenefice(e.target.value)} placeholder="ex : 400 000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
@@ -159,18 +165,18 @@ export default function TaxSimulator() {
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mois écoulés (1 à 12)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.monthsElapsed")}</label>
                 <input type="number" min="1" max="12" value={mois} onChange={(e) => setMois(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div className="hidden md:block" />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CA réalisé sur la période (DH)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.caPeriod")}</label>
                 <input type="number" min="0" value={caRealise} onChange={(e) => setCaRealise(e.target.value)} placeholder="ex : 500 000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bénéfice réalisé sur la période (DH)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.profitPeriod")}</label>
                 <input type="number" min="0" value={beneficeRealise} onChange={(e) => setBeneficeRealise(e.target.value)} placeholder="ex : 100 000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
               </div>
@@ -178,17 +184,17 @@ export default function TaxSimulator() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre d'employés</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.employees")}</label>
             <input type="number" min="0" value={employes} onChange={(e) => setEmployes(e.target.value)} placeholder="ex : 5"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Salaire brut mensuel moyen (DH)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.avgSalary")}</label>
             <input type="number" min="0" value={salaire} onChange={(e) => setSalaire(e.target.value)} placeholder="ex : 6 000"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Taux de TVA</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("tax.tvaRate")}</label>
             <select value={tauxTva} onChange={(e) => setTauxTva(parseInt(e.target.value, 10))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-mizan-500 outline-none">
               {[20, 14, 10, 7].map((t) => <option key={t} value={t}>{t}%</option>)}
@@ -196,7 +202,7 @@ export default function TaxSimulator() {
           </div>
           <div className="flex items-center mt-7">
             <input id="fin" type="checkbox" checked={secteurFinancier} onChange={(e) => setSecteurFinancier(e.target.checked)} className="w-4 h-4 mr-2" />
-            <label htmlFor="fin" className="text-sm text-gray-700">Banque / Assurance (IS 40 %)</label>
+            <label htmlFor="fin" className="text-sm text-gray-700">{t("tax.financial")}</label>
           </div>
         </div>
 
@@ -204,7 +210,7 @@ export default function TaxSimulator() {
 
         <button onClick={handleSubmit} disabled={loading}
           className="mt-5 w-full md:w-auto bg-mizan-600 hover:bg-mizan-700 disabled:opacity-50 text-white font-medium px-6 py-2.5 rounded-lg transition">
-          {loading ? "Calcul en cours…" : mode === "simulateur" ? "Calculer" : "Projeter"}
+          {loading ? t("tax.computing") : mode === "simulateur" ? t("tax.compute") : t("tax.project")}
         </button>
       </div>
 
@@ -212,47 +218,47 @@ export default function TaxSimulator() {
       {sim && (
         <div className="mt-6 space-y-4 print:mt-0">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">Basé sur la <strong>{sim.meta.loi_finances}</strong></div>
+            <div className="text-sm text-gray-500">{t("tax.basedOn")} <strong>{sim.meta.loi_finances}</strong></div>
             <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-mizan-600 hover:text-mizan-800 print:hidden">
-              <Printer className="w-4 h-4" /> Imprimer / PDF
+              <Printer className="w-4 h-4" /> {t("tax.print")}
             </button>
           </div>
 
-          <Card icon={<Building2 className="w-5 h-5 text-mizan-600" />} title="Impôt sur les Sociétés (IS)" value={fmt(sim.is.is_du)}>
-            <Row label="Taux applicable" value={`${sim.is.taux} %`} />
-            <Row label="IS calculé" value={fmt(sim.is.is_calcule)} />
-            <Row label="Cotisation minimale" value={fmt(sim.is.cotisation_minimale)} />
-            <Row label="IS dû (le plus élevé)" value={fmt(sim.is.is_du)} strong />
+          <Card icon={<Building2 className="w-5 h-5 text-mizan-600" />} title={t("tax.isTitle")} value={fmt(sim.is.is_du)}>
+            <Row label={t("tax.isRate")} value={`${sim.is.taux} %`} />
+            <Row label={t("tax.isCalc")} value={fmt(sim.is.is_calcule)} />
+            <Row label={t("tax.isMin")} value={fmt(sim.is.cotisation_minimale)} />
+            <Row label={t("tax.isDue")} value={fmt(sim.is.is_du)} strong />
             <Explain text={sim.is.explication} />
           </Card>
 
-          <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title="TVA collectée (estimée)" value={fmt(sim.tva.tva_collectee)}>
-            <Row label="Taux de TVA" value={`${sim.tva.taux} %`} />
-            <Row label="TVA collectée sur le CA" value={fmt(sim.tva.tva_collectee)} strong />
+          <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title={t("tax.tvaTitle")} value={fmt(sim.tva.tva_collectee)}>
+            <Row label={t("tax.tvaRateRow")} value={`${sim.tva.taux} %`} />
+            <Row label={t("tax.tvaCollected")} value={fmt(sim.tva.tva_collectee)} strong />
             <Explain text={sim.tva.explication} />
           </Card>
 
           {sim.cnss && (
-            <Card icon={<Users className="w-5 h-5 text-mizan-600" />} title="Cotisations CNSS (annuelles)" value={fmt(sim.cnss.total_annuel)}>
-              <Row label="Part patronale (entreprise)" value={fmt(sim.cnss.patronale_annuelle_totale)} strong />
-              <Row label="Part salariale (employés)" value={fmt(sim.cnss.salariale_annuelle_totale)} />
-              <Row label="Total CNSS annuel" value={fmt(sim.cnss.total_annuel)} />
+            <Card icon={<Users className="w-5 h-5 text-mizan-600" />} title={t("tax.cnssTitle")} value={fmt(sim.cnss.total_annuel)}>
+              <Row label={t("tax.cnssEmployer")} value={fmt(sim.cnss.patronale_annuelle_totale)} strong />
+              <Row label={t("tax.cnssEmployee")} value={fmt(sim.cnss.salariale_annuelle_totale)} />
+              <Row label={t("tax.cnssTotal")} value={fmt(sim.cnss.total_annuel)} />
               <Explain text={sim.cnss.explication} />
             </Card>
           )}
 
           {sim.ir && (
-            <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title="Impôt sur le Revenu (IR) — employés" value={fmt(sim.ir.ir_annuel_total)}>
-              <Row label="RNI par employé" value={fmt(sim.ir.rni_annuel_par_employe)} />
-              <Row label="Taux marginal" value={`${sim.ir.taux} %`} />
-              <Row label="IR total / an" value={fmt(sim.ir.ir_annuel_total)} strong />
+            <Card icon={<Receipt className="w-5 h-5 text-mizan-600" />} title={t("tax.irTitle")} value={fmt(sim.ir.ir_annuel_total)}>
+              <Row label={t("tax.irRni")} value={fmt(sim.ir.rni_annuel_par_employe)} />
+              <Row label={t("tax.irRate")} value={`${sim.ir.taux} %`} />
+              <Row label={t("tax.irTotal")} value={fmt(sim.ir.ir_annuel_total)} strong />
               <Explain text={sim.ir.explication} />
             </Card>
           )}
 
           <div className="bg-mizan-600 text-white rounded-xl p-5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold">Total charges & impôts entreprise (annuel)</span>
+              <span className="font-semibold">{t("tax.totalTitle")}</span>
               <span className="text-xl font-bold">{fmt(sim.totaux.total_charges_entreprise_annuel)}</span>
             </div>
             <p className="text-mizan-100 text-xs mt-2">{sim.totaux.note}</p>
@@ -264,45 +270,45 @@ export default function TaxSimulator() {
       {proj && (
         <div className="mt-6 space-y-4 print:mt-0">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">Projection sur 12 mois (× {proj.projection.facteur}) · {proj.meta.loi_finances}</div>
+            <div className="text-sm text-gray-500">{t("tax.projOn")} (× {proj.projection.facteur}) · {proj.meta.loi_finances}</div>
             <button onClick={() => window.print()} className="flex items-center gap-1.5 text-sm text-mizan-600 hover:text-mizan-800 print:hidden">
-              <Printer className="w-4 h-4" /> Imprimer / PDF
+              <Printer className="w-4 h-4" /> {t("tax.print")}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <h2 className="font-semibold text-gray-900 mb-3">Réalisé ({proj.realise.mois_ecoules} mois)</h2>
-              <Row label="Chiffre d'affaires" value={fmt(proj.realise.ca_realise)} />
-              <Row label="Bénéfice" value={fmt(proj.realise.benefice_realise)} />
+              <h2 className="font-semibold text-gray-900 mb-3">{t("tax.realised")} ({proj.realise.mois_ecoules} {t("tax.months")})</h2>
+              <Row label={t("tax.ca")} value={fmt(proj.realise.ca_realise)} />
+              <Row label={t("tax.profit")} value={fmt(proj.realise.benefice_realise)} />
             </div>
             <div className="bg-white rounded-xl border border-mizan-200 p-5 shadow-sm">
-              <h2 className="font-semibold text-mizan-900 mb-3">Projeté (12 mois)</h2>
-              <Row label="Chiffre d'affaires" value={fmt(proj.projection.ca_projete)} />
-              <Row label="Bénéfice" value={fmt(proj.projection.benefice_projete)} strong />
+              <h2 className="font-semibold text-mizan-900 mb-3">{t("tax.projected")}</h2>
+              <Row label={t("tax.ca")} value={fmt(proj.projection.ca_projete)} />
+              <Row label={t("tax.profit")} value={fmt(proj.projection.benefice_projete)} strong />
             </div>
           </div>
 
           <div className="bg-mizan-600 text-white rounded-xl p-5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold">IS prévisionnel (fin d'année estimée)</span>
+              <span className="font-semibold">{t("tax.isForecast")}</span>
               <span className="text-xl font-bold">{fmt(proj.is_previsionnel)}</span>
             </div>
             <p className="text-mizan-100 text-xs mt-2">
-              Charges totales entreprise estimées : {fmt(proj.simulation.totaux.total_charges_entreprise_annuel)}
+              {t("tax.estCharges")} {fmt(proj.simulation.totaux.total_charges_entreprise_annuel)}
             </p>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3"><Calendar className="w-5 h-5 text-mizan-600" />
-              <h2 className="font-semibold text-gray-900">Échéancier des acomptes d'IS</h2></div>
+              <h2 className="font-semibold text-gray-900">{t("tax.acomptesTitle")}</h2></div>
             <table className="w-full text-sm">
               <thead><tr className="text-left text-gray-500 border-b">
-                <th className="py-2">Acompte</th><th className="py-2">Échéance</th><th className="py-2 text-right">Montant</th></tr></thead>
+                <th className="py-2">{t("tax.acompte")}</th><th className="py-2">{t("tax.dueDate")}</th><th className="py-2 text-right">{t("tax.amount")}</th></tr></thead>
               <tbody>
                 {proj.acomptes.map((a) => (
                   <tr key={a.numero} className="border-b border-gray-100">
-                    <td className="py-2 text-gray-700">Acompte {a.numero}</td>
+                    <td className="py-2 text-gray-700">{t("tax.acompte")} {a.numero}</td>
                     <td className="py-2 text-gray-600">{a.date}</td>
                     <td className="py-2 text-right font-semibold text-gray-900">{fmt(a.montant)}</td>
                   </tr>
@@ -316,7 +322,7 @@ export default function TaxSimulator() {
 
           <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
             <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-5 h-5 text-amber-600" />
-              <h2 className="font-semibold text-amber-900">Analyse & conseils</h2></div>
+              <h2 className="font-semibold text-amber-900">{t("tax.adviceTitle")}</h2></div>
             <p className="text-sm text-amber-900 mb-3">{proj.ai.explication}</p>
             <ul className="space-y-1.5">
               {proj.ai.conseils.map((c, i) => (

@@ -14,8 +14,8 @@ class Decision(db.Model):
     category    = db.Column(db.String(100), nullable=True)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def to_dict(self):
-        return {
+    def to_dict(self, full=False):
+        d = {
             "id":         self.id,
             "title":      self.title,
             "court":      self.court,
@@ -24,3 +24,6 @@ class Decision(db.Model):
             "category":   self.category,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+        if full:
+            d["full_text"] = self.full_text
+        return d

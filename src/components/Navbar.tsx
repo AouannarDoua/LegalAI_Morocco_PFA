@@ -2,11 +2,14 @@ import { Link } from "react-router-dom";
 import { Bell, Search, ChevronDown } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../i18n/LanguageContext";
+import { useDesktopNotifications } from "../hooks/useDesktopNotifications";
 import LanguageToggle from "./LanguageToggle";
 
 export default function Navbar({ collapsed = false }: { collapsed?: boolean }) {
   const { user } = useAuth();
   const { t } = useLang();
+  // Notifications bureau natives (comme WhatsApp) + compteur de non-lus
+  const { permission, requestPermission, unread } = useDesktopNotifications(!!user);
 
   const name = (user as any)?.full_name || (user as any)?.fullName || (user as any)?.email || "Mizan";
   const initials = name.split(" ").map((p: string) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -24,9 +27,20 @@ export default function Navbar({ collapsed = false }: { collapsed?: boolean }) {
       <div className="flex items-center gap-5">
         <LanguageToggle />
 
-        <Link to="/notifications" className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-50">
+        <Link to="/notifications"
+          onClick={() => { if (permission !== "granted") requestPermission(); }}
+          title={permission === "granted" ? undefined : t("notif.enable")}
+          className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-50">
           <Bell className="h-5 w-5" />
-          <span className="absolute end-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-flag" />
+          {unread > 0 ? (
+            <span className="absolute -end-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full border-2 border-white bg-flag px-1 text-[10px] font-bold leading-none text-white">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : (
+            permission !== "granted" && (
+              <span className="absolute end-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-gold-500" />
+            )
+          )}
         </Link>
 
         <div className="h-8 w-px bg-gray-200" />

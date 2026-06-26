@@ -49,12 +49,14 @@ export interface Decision {
   summary:    string | null;
   category:   string | null;
   created_at: string;
+  full_text?: string;
 }
 
 export const decisionService = {
-  list: (page = 1, category?: string): Promise<PaginatedData<Decision>> => {
+  list: (page = 1, category?: string, q?: string): Promise<PaginatedData<Decision>> => {
     const params = new URLSearchParams({ page: String(page) });
     if (category) params.set("category", category);
+    if (q && q.trim()) params.set("q", q.trim());
     return api.get<PaginatedData<Decision>>(`decisions?${params}`);
   },
 
@@ -73,17 +75,22 @@ export interface Article {
   author:     string | null;
   published:  boolean;
   created_at: string;
+  content?:   string;
 }
 
 export const articleService = {
-  list: (page = 1, category?: string): Promise<PaginatedData<Article>> => {
+  list: (page = 1, category?: string, q?: string): Promise<PaginatedData<Article>> => {
     const params = new URLSearchParams({ page: String(page) });
     if (category) params.set("category", category);
+    if (q && q.trim()) params.set("q", q.trim());
     return api.get<PaginatedData<Article>>(`articles?${params}`);
   },
 
   getById: (id: number): Promise<Article> =>
     api.get<Article>(`articles/${id}`),
+
+  categories: (): Promise<string[]> =>
+    api.get<string[]>(`articles/categories`),
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
