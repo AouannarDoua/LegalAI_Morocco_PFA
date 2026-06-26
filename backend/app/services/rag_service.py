@@ -3,6 +3,10 @@ import json
 from groq import Groq
 from rank_bm25 import BM25Okapi
 from dotenv import load_dotenv
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 load_dotenv()
 
@@ -21,7 +25,7 @@ class RAGService:
     def __init__(self):
         api_key = os.environ.get("GROQ_API_KEY", "")
         if not api_key:
-            print("[RAGService] ⚠️  GROQ_API_KEY manquante dans .env")
+            print("[RAGService]   GROQ_API_KEY manquante dans .env")
 
         self.client     = Groq(api_key=api_key)
         self.model_name = "llama-3.3-70b-versatile"
