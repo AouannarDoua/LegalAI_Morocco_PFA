@@ -7,6 +7,10 @@ import math
 from collections import Counter
 from groq import Groq
 from dotenv import load_dotenv
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 from .legal_data import load_all
 
@@ -138,7 +142,7 @@ class RAGService:
     def __init__(self):
         api_key = os.environ.get("GROQ_API_KEY", "")
         if not api_key:
-            print("[RAGService] ⚠️  GROQ_API_KEY manquante dans .env")
+            print("[RAGService]   GROQ_API_KEY manquante dans .env")
 
         self.client = Groq(api_key=api_key)
         self.model_name = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")

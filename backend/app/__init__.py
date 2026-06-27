@@ -1,31 +1,64 @@
 import os
 from flask import Flask
+
 from .extensions import db, migrate, jwt, cors, bcrypt, mail
 from .config import config_map
+
+# Routes imported directly
 from .routes.tax import tax_bp
 from .routes.tax_admin import tax_admin_bp
-from .models.tax_update import TaxUpdate 
+
 
 def create_app(config_name=None):
+
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "development")
 
     app = Flask(__name__)
-    app.config.from_object(config_map.get(config_name, config_map["default"]))
+
+    # Load configuration
+    app.config.from_object(
+        config_map.get(config_name, config_map["default"])
+    )
+
+    # Disable strict slash difference (/api/test == /api/test/)
     app.url_map.strict_slashes = False
+
+
+    # =========================
+    # Initialize extensions
+    # =========================
 
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     bcrypt.init_app(app)
-    mail.init_app(app)  # ✅ Mail ajouté
-    cors.init_app(app, resources={
-        r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
+    mail.init_app(app)
+
+    cors.init_app(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": "*",
+                "methods": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                    "OPTIONS"
+                ],
+                "allow_headers": [
+                    "Content-Type",
+                    "Authorization"
+                ],
+            }
         }
-    })
+    )
+
+
+    # =========================
+    # Import blueprints
+    # =========================
 
     from .routes.auth import auth_bp
     from .routes.chat import chat_bp
@@ -39,25 +72,109 @@ def create_app(config_name=None):
     from .routes.voice import voice_bp
     from .routes.translate import translate_bp
 
-    app.register_blueprint(auth_bp,          url_prefix="/api/auth")
-    app.register_blueprint(chat_bp,          url_prefix="/api/chat")
-    app.register_blueprint(contracts_bp,     url_prefix="/api/contracts")
-    app.register_blueprint(documents_bp,     url_prefix="/api/documents")
-    app.register_blueprint(decisions_bp,     url_prefix="/api/decisions")
-    app.register_blueprint(articles_bp,      url_prefix="/api/articles")
-    app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
-    app.register_blueprint(profile_bp,       url_prefix="/api/profile")
-    app.register_blueprint(dashboard_bp,     url_prefix="/api/dashboard")
-    app.register_blueprint(voice_bp,         url_prefix="/api/voice")
-    app.register_blueprint(translate_bp,     url_prefix="/api/translate")
-    app.register_blueprint(tax_bp,       url_prefix="/api/tax")
-    app.register_blueprint(tax_admin_bp, url_prefix="/api/tax/admin")
+
+    # =========================
+    # Register blueprints
+    # =========================
+
+    app.register_blueprint(
+        auth_bp,
+        url_prefix="/api/auth"
+    )
+
+    app.register_blueprint(
+        chat_bp,
+        url_prefix="/api/chat"
+    )
+
+    app.register_blueprint(
+        contracts_bp,
+        url_prefix="/api/contracts"
+    )
+
+    app.register_blueprint(
+        documents_bp,
+        url_prefix="/api/documents"
+    )
+
+    app.register_blueprint(
+        decisions_bp,
+        url_prefix="/api/decisions"
+    )
+
+    app.register_blueprint(
+        articles_bp,
+        url_prefix="/api/articles"
+    )
+
+    app.register_blueprint(
+        notifications_bp,
+        url_prefix="/api/notifications"
+    )
+
+    app.register_blueprint(
+        profile_bp,
+        url_prefix="/api/profile"
+    )
+
+    app.register_blueprint(
+        dashboard_bp,
+        url_prefix="/api/dashboard"
+    )
+
+    app.register_blueprint(
+        voice_bp,
+        url_prefix="/api/voice"
+    )
+
+    app.register_blueprint(
+        translate_bp,
+        url_prefix="/api/translate"
+    )
+
+    app.register_blueprint(
+        tax_bp,
+        url_prefix="/api/tax"
+    )
+
+    app.register_blueprint(
+        tax_admin_bp,
+        url_prefix="/api/tax/admin"
+    )
+
+
+    # =========================
+    # Test routes
+    # =========================
+
+    @app.route("/")
+    def home():
+        return {
+            "message": "LegalAI Morocco API is running",
+            "status": "success"
+        }, 200
+
+
     @app.route("/api/health")
     def health():
-        return {"status": "ok", "app": "LegalAI Morocco API"}, 200
-    
+        return {
+            "status": "ok",
+            "app": "LegalAI Morocco API"
+        }, 200
+
+
+    # =========================
+    # Scheduler
+    # =========================
+
     from .scheduler import init_scheduler
     init_scheduler(app)
+
+
+    # Show all available routes
+    print("\n===== AVAILABLE ROUTES =====")
+    print(app.url_map)
+    print("============================\n")
 
 
     return app

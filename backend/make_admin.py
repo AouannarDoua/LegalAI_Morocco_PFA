@@ -9,7 +9,7 @@ from app import create_app
 from app.extensions import db
 from app.models.user import User
 from app.models.tax_update import TaxUpdate  # noqa: F401 (import pour que create_all la connaisse)
-
+from app.models.company_registration import CompanyRegistration  # noqa: F401
 app = create_app()
 
 with app.app_context():

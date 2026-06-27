@@ -20,7 +20,6 @@ flask-mail
 APScheduler 
 requests
 
-DF.
 fpdf2
 arabic-reshaper
 python-bidi
