@@ -69,6 +69,26 @@ def clean_answer(text: str) -> str:
     return text.strip()
 
 
+# Mots latins qui « fuitent » dans une réponse censée être 100% arabe
+# (ex. « translate », « ng »). Le modèle code-switch parfois vers l'anglais.
+_LATIN_RUN = re.compile(r"[A-Za-z]+")
+
+
+def enforce_arabic(text: str) -> str:
+    """À utiliser UNIQUEMENT pour les réponses en arabe : retire les mots latins
+    qui se sont glissés dans le texte arabe (sans toucher aux chiffres ni aux
+    numéros d'articles), puis recolle proprement la ponctuation et les espaces."""
+    if not text:
+        return text
+    text = _LATIN_RUN.sub("", text)
+    # nettoie les résidus laissés par la suppression (lettres orphelines collées,
+    # double espaces, ponctuation isolée)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\s+([،؛.:!؟])", r"\1", text)
+    text = re.sub(r"(^|\n)[ \t]*[،,؛:.]+[ \t]*", r"\1", text)
+    return text.strip()
+
+
 # ─── BM25 intégré (zéro dépendance externe) ───────────────────────────────────
 class SimpleBM25:
     def __init__(self, corpus_tokens, k1: float = 1.5, b: float = 0.75):
@@ -121,7 +141,7 @@ class RAGService:
             print("[RAGService] ⚠️  GROQ_API_KEY manquante dans .env")
 
         self.client = Groq(api_key=api_key)
-        self.model_name = "llama-3.3-70b-versatile"
+        self.model_name = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.documents = []
         self.bm25 = None
         self._prepare_knowledge_base()
@@ -172,8 +192,20 @@ class RAGService:
     def retrieve_many(self, query: str, top_n: int = 4):
         if not self.bm25 or not self.documents:
             return []
-        idxs = self.bm25.top_n(tokenize(query), n=top_n)
-        return [self._doc_to_mock(self.documents[i]) for i in idxs]
+        # ✅ Les LOIS/ARTICLES répondent mieux aux questions « comment / quelle règle »
+        #    que les décisions (qui ne décrivent qu'un litige précis). On applique un
+        #    petit bonus de rang aux lois pour qu'elles ne soient pas noyées sous les
+        #    milliers de décisions -> le chat trouve enfin la bonne base légale.
+        sc = self.bm25.scores(tokenize(query))
+        ranked = []
+        for i, s in enumerate(sc):
+            if s <= 0:
+                continue
+            typ = self.documents[i].get("نوع_المصدر", "article")
+            poids = 1.3 if typ in ("loi", "article") else 1.0
+            ranked.append((s * poids, i))
+        ranked.sort(key=lambda x: x[0], reverse=True)
+        return [self._doc_to_mock(self.documents[i]) for _, i in ranked[:top_n]]
 
     # ─── Recherche translingue ────────────────────────────────────────────────
     def _retrieval_query(self, query: str) -> str:
@@ -248,10 +280,13 @@ class RAGService:
                 "- Même si la question est posée dans une autre langue, ou si les documents "
                 "contiennent des mots étrangers, ta réponse reste en français.\n"
                 "RÈGLES DE CONTENU :\n"
-                "- Appuie-toi seulement sur les documents ci-dessous ; cite le numéro de "
+                "- Appuie-toi d'abord sur les documents ci-dessous ; cite le numéro de "
                 "décision / d'article / de loi lorsqu'il est présent.\n"
-                "- Si l'information n'y figure pas, réponds exactement : "
-                "« Cette information n'est pas disponible dans nos documents. » N'invente rien."
+                "- Si les documents sont liés au sujet sans y répondre mot pour mot, fournis "
+                "une réponse pratique et claire, conforme au droit marocain, fondée sur eux.\n"
+                "- Ne réponds « Cette information n'est pas disponible dans nos documents. » "
+                "que si la question est totalement hors du droit marocain ou qu'aucun document "
+                "pertinent n'existe. N'invente jamais de numéro d'article ou de décision."
             )
             user = (
                 f"Documents de référence :\n{context if context else '(aucun document pertinent trouvé)'}\n\n"
@@ -267,9 +302,11 @@ class RAGService:
                 "- حتى لو طُرح السؤال بلغة أجنبية، أو احتوت الوثائق على كلمات أجنبية، "
                 "يجب أن يكون جوابك بالكامل بالعربية.\n"
                 "قواعد المحتوى:\n"
-                "- استند فقط إلى الوثائق أدناه؛ واذكر رقم القرار/المادة/القانون عند وجوده.\n"
-                "- إن لم تكن المعلومة موجودة في الوثائق، فقل حرفياً: "
-                "«هذه المعلومة غير متوفرة في وثائقنا.» ولا تخترع أي معلومة."
+                "- استند أساساً إلى الوثائق أدناه، واذكر رقم المادة/القانون/القرار عند وجوده.\n"
+                "- إذا كانت الوثائق متصلة بالموضوع لكنها لا تجيب حرفياً، قدّم إجابة عملية "
+                "وواضحة موافقة للقانون المغربي مستندة إلى ما ورد فيها.\n"
+                "- لا تقل «هذه المعلومة غير متوفرة في وثائقنا.» إلا إذا كان السؤال خارج نطاق "
+                "القانون المغربي كلياً أو لا توجد أي وثيقة ذات صلة. ولا تخترع أرقام مواد أو قرارات غير موجودة."
             )
             user = (
                 f"الوثائق المرجعية:\n{context if context else '(لم يتم العثور على وثيقة مطابقة)'}\n\n"
@@ -287,6 +324,8 @@ class RAGService:
                 max_tokens=1500,
             )
             answer = clean_answer(response.choices[0].message.content)
+            if lang != "fr":
+                answer = enforce_arabic(answer)   # ✅ supprime les fuites latines (ar uniquement)
         except Exception as e:
             print(f"[RAGService] Groq error: {e}")
             answer = (

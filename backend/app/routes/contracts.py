@@ -24,6 +24,17 @@ def get_contracts():
     })
 
 
+# ─── GET /contracts/<id> — un seul contrat (pour pré-charger son PDF) ──────────
+@contracts_bp.get("/<int:contract_id>")
+@jwt_required()
+def get_contract(contract_id):
+    user_id  = get_jwt_identity()
+    contract = Contract.query.filter_by(id=contract_id, user_id=user_id).first()
+    if not contract:
+        return error_response("Contrat introuvable", 404)
+    return success_response(contract.to_dict())
+
+
 # ─── POST /contracts ──────────────────────────────────────────────────────────
 
 @contracts_bp.post("/")

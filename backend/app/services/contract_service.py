@@ -16,6 +16,7 @@ from ..models.contract import Contract
 from .rag_service import rag_service
 from .ai_service import ai_service
 from .contract_types_data import CONTRACT_TYPES
+from .contract_grids import clauses_for  # SOURCE UNIQUE partagée avec le Score
 
 from groq import Groq
 from dotenv import load_dotenv
@@ -31,7 +32,7 @@ try:
 except Exception:
     _AR_PDF = False
 
-MODEL       = "llama-3.3-70b-versatile"
+MODEL       = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 MAX_RETRY   = 2
 BASE_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 UPLOAD_DIR  = os.path.join(os.getcwd(), "uploads")    # route download sert d'ici
@@ -593,7 +594,9 @@ class ContractService:
         # Résout le type via mots-clés (le frontend envoie souvent le TITRE arabe)
         resolved = detect_contract_type(contract_type)
         cfg      = CONTRACT_TYPES.get(resolved) if resolved else None
-        clauses  = cfg.get("clauses", []) if cfg else []
+        # Clauses = source UNIQUE partagée avec le Score (base + universelles).
+        # -> le contrat généré contient ce que le Score vérifie.
+        clauses  = clauses_for(resolved or contract_type)
         # nom de type lisible pour le prompt
         type_label = resolved or contract_type
 

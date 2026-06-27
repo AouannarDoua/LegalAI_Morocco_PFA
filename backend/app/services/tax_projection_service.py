@@ -24,7 +24,7 @@ except Exception:
 
 class TaxProjectionService:
     def __init__(self):
-        self.model_name = "llama-3.3-70b-versatile"
+        self.model_name = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     @staticmethod
     def _round(x):

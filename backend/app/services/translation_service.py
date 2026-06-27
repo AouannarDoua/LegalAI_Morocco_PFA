@@ -13,7 +13,7 @@ class TranslationService:
         if not api_key:
             print("[TranslationService] ⚠️  GROQ_API_KEY manquante dans .env")
         self.client = Groq(api_key=api_key)
-        self.model = "llama-3.3-70b-versatile"
+        self.model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     def translate(self, text: str, target: str = "fr") -> str:
         """

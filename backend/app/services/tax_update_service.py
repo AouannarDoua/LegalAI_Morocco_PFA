@@ -41,7 +41,7 @@ except Exception:
 
 class TaxUpdateService:
     def __init__(self):
-        self.model_name = "llama-3.3-70b-versatile"
+        self.model_name = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     # ─── Sources de vérification (depuis tax_rates.json) ─────────────────────
     def _get_sources(self):

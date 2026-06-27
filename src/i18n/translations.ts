@@ -133,7 +133,7 @@ export const translations = {
         },
         {
           name: "PME",
-          price: "490",
+          price: "799",
           unit: "MAD / mois",
           desc: "L'essentiel juridique pour une équipe qui avance.",
           cta: "Démarrer l'essai",
@@ -289,7 +289,7 @@ export const translations = {
         },
         {
           name: "مقاولة",
-          price: "490",
+          price: "799",
           unit: "درهم / شهر",
           desc: "الأساسي القانوني لفريق يتقدّم.",
           cta: "ابدأ التجربة",

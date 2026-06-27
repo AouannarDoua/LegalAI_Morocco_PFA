@@ -1,4 +1,5 @@
-import api from "./apiClient";
+// src/services/index.ts
+import api, { BASE_URL, tokenStorage } from "./apiClient";
 import type { PaginatedData } from "./apiClient";
 
 // ─── Re-export depuis contractService ────────────────────────────────────────
@@ -26,12 +27,56 @@ export const documentService = {
   getById: (id: number): Promise<Document> =>
     api.get<Document>(`documents/${id}`),
 
+  // Création d'un document "texte" (JSON) — inchangé
   create: (payload: {
     title:     string;
     doc_type?: string;
     content?:  string;
   }): Promise<Document> =>
     api.post<Document>("documents", payload),
+
+  // ✅ NOUVEAU : upload d'un VRAI fichier (multipart/form-data).
+  // On n'utilise PAS api.post ici car il force "Content-Type: application/json".
+  upload: async (
+    file: File,
+    title?: string,
+    doc_type?: string,
+  ): Promise<Document> => {
+    const form = new FormData();
+    form.append("file", file);
+    if (title)    form.append("title", title);
+    if (doc_type) form.append("doc_type", doc_type);
+
+    const token = tokenStorage.get();
+    const res = await fetch(`${BASE_URL}/documents`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form, // le navigateur met le bon Content-Type + boundary tout seul
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || "Échec du téléversement");
+    }
+    return json.data as Document;
+  },
+
+  // ✅ NOUVEAU : téléchargement authentifié du fichier (déclenche le download).
+  download: async (id: number, filename = "document"): Promise<void> => {
+    const token = tokenStorage.get();
+    const res = await fetch(`${BASE_URL}/documents/${id}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error("Téléchargement impossible");
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 
   delete: (id: number): Promise<void> =>
     api.delete<void>(`documents/${id}`),

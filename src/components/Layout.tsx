@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import ErrorBoundary from "./ErrorBoundary";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Layout() {
@@ -26,7 +27,11 @@ export default function Layout() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <Outlet />
+              {/* ✅ Filet de sécurité : une exception de rendu affiche un message
+                  (et un bouton Réessayer) au lieu d'une PAGE BLANCHE. */}
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </div>
