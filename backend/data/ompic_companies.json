@@ -1,0 +1,20 @@
+[
+    {
+      "rc_number": "123456",
+      "rc_city": "Tanger",
+      "company_name": "LEGALAI MOROCCO SARL",
+      "status": "active"
+    },
+    {
+      "rc_number": "789456",
+      "rc_city": "Casablanca",
+      "company_name": "MAROC DIGITAL SERVICES SARL",
+      "status": "active"
+    },
+    {
+      "rc_number": "555555",
+      "rc_city": "Rabat",
+      "company_name": "ENTREPRISE INACTIVE SARL",
+      "status": "inactive"
+    }
+  ]
