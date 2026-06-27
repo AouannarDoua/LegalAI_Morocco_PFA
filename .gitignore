@@ -1,8 +1,35 @@
+# ─── Node / Frontend ─────────────────────────────────────
 node_modules/
 build/
 dist/
 coverage/
 .DS_Store
 *.log
+
+# ─── Secrets ─────────────────────────────────────────────
 .env*
 !.env.example
+
+# ─── Python / environnements virtuels ────────────────────
+# NE JAMAIS committer un venv : il contient le chemin Python
+# absolu de la machine qui l'a créé → casse chez les autres.
+venv/
+.venv/
+env/
+**/venv/
+**/venv311/
+**/.venv/
+
+# ─── Python : caches & artefacts ─────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# ─── Base de données locale / instance Flask ─────────────
+instance/
+*.sqlite
+*.sqlite3
+*.db

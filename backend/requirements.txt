@@ -1,26 +1,63 @@
+# ════════════════════════════════════════════════════════════════════════
+#  LegalAI Morocco — dépendances Python
+#  Backend Flask (port 5000)  +  Service Score FastAPI (port 8000)
+#  Installation :  pip install -r requirements.txt
+# ════════════════════════════════════════════════════════════════════════
+
+# ─── Backend Flask (API principale, port 5000) ──────────────────────────
 flask==3.1.0
 flask-sqlalchemy==3.1.1
 flask-migrate==4.0.7
 flask-jwt-extended==4.7.1
 flask-cors==5.0.0
 flask-bcrypt==1.0.1
-python-dotenv==1.0.1
+flask-mail
 marshmallow==3.23.1
-openai==1.61.0
-groq
-google-genai
-anthropic==0.45.0
+
+# ─── Base de données ────────────────────────────────────────────────────
 sqlalchemy==2.0.36
-psycopg2-binary
+pymysql==1.1.1            # MySQL (service Score)
+psycopg2-binary          # PostgreSQL (optionnel)
+
+# ─── IA (Groq = principal ; les autres au cas où) ───────────────────────
+groq
+openai==1.61.0
+anthropic==0.45.0
+google-genai             # synthèse vocale (TTS) — voice_service
+
+# ─── Service Score FastAPI (port 8000) — ⚠️ MANQUAIENT ──────────────────
+fastapi
+uvicorn[standard]        # serveur ASGI : uvicorn main:app --port 8000
+python-multipart         # OBLIGATOIRE pour l'upload de fichiers (UploadFile/Form)
+pydantic
+
+# ─── Lecture / génération de documents ──────────────────────────────────
+pymupdf                  # extraction de texte des PDF (import pymupdf)
+python-docx              # extraction des .docx (import docx)
+reportlab                # génération du rapport PDF (Score)
+fpdf2                    # génération des contrats (backend)
+arabic-reshaper          # mise en forme de l'arabe dans les PDF
+python-bidi              # sens d'écriture RTL dans les PDF
+Pillow                   # images (logo, etc.)
+
+# ─── Divers ─────────────────────────────────────────────────────────────
+numpy                    # calculs (similarité de clauses) — main.py
+python-dotenv==1.0.1     # lecture du .env
+requests                 # veille fiscale (tax_update_service)
+APScheduler              # planificateur (vérification fiscale mensuelle)
+
+# ─── Tests ──────────────────────────────────────────────────────────────
 pytest==8.3.4
 pytest-flask==1.3.0
-pymysql==1.1.1
 
-flask-mail
-APScheduler 
-requests
+pytesseract
 
-fpdf2
-arabic-reshaper
-python-bidi
-Pillow
+langchain
+langchain-text-splitters
+langchain-huggingface
+langchain-community
+faiss-cpu
+sentence-transformers
+scikit-learn
+rank-bm25
+uvicorn[standard]

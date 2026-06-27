@@ -12,6 +12,9 @@ import {
   Send,
   BadgeCheck,
   Sparkles,
+  FilePlus2,
+  Calculator,
+  Mic,
 } from "lucide-react";
 import { useLang } from "../i18n/LanguageContext";
 import LanguageToggle from "../components/LanguageToggle";
@@ -29,7 +32,7 @@ function ZellijStar({ className = "" }: { className?: string }) {
   );
 }
 
-const featIcons = [Search, FileText, RefreshCw, ShieldCheck];
+const featIcons = [Search, FileText, FilePlus2, Calculator, RefreshCw, Mic];
 
 export default function Landing() {
   const { t, dir } = useLang();

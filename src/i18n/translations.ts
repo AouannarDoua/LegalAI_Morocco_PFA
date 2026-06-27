@@ -71,20 +71,28 @@ export const translations = {
         "Les usages qui couvrent le quotidien juridique d'une PME marocaine, sans jargon et sans honoraires à l'heure.",
       features: [
         {
-          t: "Recherche juridique",
-          d: "Posez une question en français ou en darija, recevez une réponse claire avec l'article et le texte exact.",
+          t: "Assistant juridique sourcé",
+          d: "Posez vos questions en arabe, français ou darija : réponse claire avec l'article de loi et la décision de justice exacts.",
         },
         {
-          t: "Rédaction de contrats",
-          d: "Générez CDI, CDD, contrats commerciaux et CGV conformes au droit marocain, prêts à signer.",
+          t: "Analyse & score de contrats",
+          d: "Importez un PDF ou Word : score de solidité, clauses présentes/manquantes, risques et rapport PDF détaillé.",
         },
         {
-          t: "Veille réglementaire",
-          d: "Soyez alerté dès qu'un nouveau Bulletin Officiel touche votre secteur d'activité.",
+          t: "Génération de contrats",
+          d: "Créez baux, contrats de travail et commerciaux conformes au droit marocain, prêts à signer.",
         },
         {
-          t: "Conformité & risques",
-          d: "Diagnostic de conformité (CNSS, fiscalité, Loi 09-08) avec plan d'action priorisé.",
+          t: "Simulateur fiscal",
+          d: "Calculez IS, TVA, CNSS et IR selon la Loi de Finances en vigueur, avec projection annuelle.",
+        },
+        {
+          t: "Veille fiscale & réglementaire",
+          d: "Soyez alerté dès qu'un nouveau barème ou Bulletin Officiel touche votre activité.",
+        },
+        {
+          t: "Mode vocal & bilingue",
+          d: "Dictez vos questions et écoutez les réponses, en arabe comme en français.",
         },
       ],
 
@@ -138,9 +146,12 @@ export const translations = {
           desc: "L'essentiel juridique pour une équipe qui avance.",
           cta: "Démarrer l'essai",
           features: [
-            "Questions illimitées",
-            "Rédaction de contrats & lettres",
+            "Questions illimitées (réponses sourcées)",
+            "Analyse & score de contrats + rapport PDF",
+            "Génération de contrats & lettres",
+            "Simulateur fiscal (IS, TVA, CNSS, IR)",
             "Veille du Bulletin Officiel",
+            "Mode vocal & traduction AR/FR",
             "Jusqu'à 5 utilisateurs",
           ],
         },
@@ -249,10 +260,12 @@ export const translations = {
       featSub:
         "استعمالات تغطي اليومي القانوني للمقاولة المغربية، بدون تعقيد وبدون أتعاب بالساعة.",
       features: [
-        { t: "البحث القانوني", d: "اطرح سؤالك بالفرنسية أو بالدارجة، واحصل على جواب واضح مع الفصل والنص الدقيق." },
-        { t: "تحرير العقود", d: "أنشئ عقود الشغل والعقود التجارية والشروط العامة مطابقة للقانون المغربي، جاهزة للتوقيع." },
-        { t: "اليقظة التشريعية", d: "كن على اطلاع فور صدور جريدة رسمية تخص قطاع نشاطك." },
-        { t: "الامتثال والمخاطر", d: "تشخيص الامتثال (CNSS، الجبايات، القانون 09-08) مع خطة عمل مرتّبة." },
+        { t: "مساعد قانوني موثّق", d: "اطرح أسئلتك بالعربية أو الفرنسية أو الدارجة: جواب واضح مع الفصل القانوني والقرار القضائي الدقيق." },
+        { t: "تحليل وتنقيط العقود", d: "ارفع ملف PDF أو Word: درجة صلابة، بنود موجودة وناقصة، مخاطر، وتقرير PDF مفصّل." },
+        { t: "إنشاء العقود", d: "أنشئ عقود الكراء والشغل والعقود التجارية مطابقة للقانون المغربي، جاهزة للتوقيع." },
+        { t: "محاكي الضرائب", d: "احسب الضريبة على الشركات والقيمة المضافة و CNSS والدخل وفق قانون المالية، مع إسقاط سنوي." },
+        { t: "اليقظة الجبائية والتشريعية", d: "كن على اطلاع فور تغيّر جدول ضريبي أو صدور جريدة رسمية تخص نشاطك." },
+        { t: "الوضع الصوتي ثنائي اللغة", d: "أملِ أسئلتك واستمع إلى الأجوبة، بالعربية والفرنسية." },
       ],
 
       howKicker: "كيف يعمل",
@@ -294,9 +307,12 @@ export const translations = {
           desc: "الأساسي القانوني لفريق يتقدّم.",
           cta: "ابدأ التجربة",
           features: [
-            "أسئلة غير محدودة",
-            "تحرير العقود والرسائل",
+            "أسئلة غير محدودة (إجابات موثّقة)",
+            "تحليل وتنقيط العقود + تقرير PDF",
+            "إنشاء العقود والرسائل",
+            "محاكي الضرائب (IS، TVA، CNSS، IR)",
             "يقظة الجريدة الرسمية",
+            "الوضع الصوتي وترجمة عربي/فرنسي",
             "حتى 5 مستخدمين",
           ],
         },
