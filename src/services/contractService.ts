@@ -19,8 +19,11 @@ export interface Contract {
 
 export interface ContractAnalysis {
   summary:            string;
+  score:              number;
+  niveau:             string;
   risks:              string[];
   negotiation_points: string[];
+  strengths:          string[];
   compliance_notes:   string;
 }
 

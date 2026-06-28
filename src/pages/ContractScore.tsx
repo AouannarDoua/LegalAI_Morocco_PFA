@@ -288,7 +288,9 @@ export default function ContractScore(
     (async () => {
       try {
         const token   = tokenStorage.get();
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers: Record<string, string> = token
+          ? { Authorization: `Bearer ${token}` }
+          : {};
         // 1) métadonnées du contrat (nom de fichier + type)
         const metaResp = await fetch(`${BASE_URL}/contracts/${contractId}`, { headers });
         if (!metaResp.ok) throw new Error("meta");

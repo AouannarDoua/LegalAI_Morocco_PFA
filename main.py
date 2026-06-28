@@ -115,7 +115,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # ══════════════════════════════════════════════════════════════════════════════
 # DATABASE
 # ══════════════════════════════════════════════════════════════════════════════
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:@127.0.0.1/legalai_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:@127.0.0.1/legalai_morocco")
 engine       = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base         = declarative_base()
