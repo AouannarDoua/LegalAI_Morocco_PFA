@@ -1,0 +1,14 @@
+**/__pycache__
+**/*.pyc
+**/.env
+**/node_modules
+**/dist
+**/.git
+**/venv
+**/.venv
+**/notebooks
+**/*.ipynb
+**/decisions_raw.json
+**/lois_raw.json
+**/decisions_extracted.json
+**/lois_extracted.json
