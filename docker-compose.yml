@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+
+  mizan-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: mizan-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - mizan-backend
+    networks:
+      - mizan-net
+    restart: unless-stopped
+
+  mizan-backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: mizan-backend
+    ports:
+      - "5000:5000"
+
+    env_file:
+      - .env
+
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      
+
+    volumes:
+      - generated-pdfs:/app/generated_pdfs
+      - uploads:/app/uploads
+
+    networks:
+      - mizan-net
+    restart: unless-stopped
+
+volumes:
+  generated-pdfs:
+  uploads:
+
+networks:
+  mizan-net:
+    driver: bridge
