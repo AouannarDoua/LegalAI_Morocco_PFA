@@ -2,6 +2,8 @@
 
 # ⚖️ LegalAI Morocco — Maliyum
 
+[![CI/CD](https://github.com/AouannarDoua/LegalAI_Morocco_PFA/actions/workflows/docker.yml/badge.svg)](https://github.com/AouannarDoua/LegalAI_Morocco_PFA/actions)
+
 ### منصة ذكاء اصطناعي للمجال القانوني المغربي
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
