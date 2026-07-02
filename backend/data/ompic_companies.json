@@ -16,5 +16,11 @@
       "rc_city": "Rabat",
       "company_name": "ENTREPRISE INACTIVE SARL",
       "status": "inactive"
+    },
+    {
+      "rc_number": "111111",
+      "rc_city": "Rabat",
+      "company_name": "ENTREPRISE ACTIVE SARL",
+      "status": "active"
     }
   ]
